@@ -83,5 +83,6 @@
 
 #运行网址：http://127.0.0.1:80/
 #数据库回滚：mysql -u [username] -p [database_name] < ruoyi_backup_20251024.sql
-用户名：
-密码：
+用户名：admin
+密码：admin123
+数据库连接：将application-druid.yml里的密码改一下

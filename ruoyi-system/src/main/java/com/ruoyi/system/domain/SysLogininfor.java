@@ -9,7 +9,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 系统访问记录表 sys_logininfor
- * 
+ *
  * @author ruoyi
  */
 public class SysLogininfor extends BaseEntity
@@ -47,6 +47,10 @@ public class SysLogininfor extends BaseEntity
     /** 提示消息 */
     @Excel(name = "提示消息")
     private String msg;
+
+    /** 登录身份 */
+    @Excel(name = "登录身份")
+    private String role;
 
     /** 访问时间 */
     @Excel(name = "访问时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
@@ -132,6 +136,16 @@ public class SysLogininfor extends BaseEntity
         this.msg = msg;
     }
 
+    public String getRole()
+    {
+        return role;
+    }
+
+    public void setRole(String role)
+    {
+        this.role = role;
+    }
+
     public Date getLoginTime()
     {
         return loginTime;
@@ -144,16 +158,17 @@ public class SysLogininfor extends BaseEntity
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("infoId", getInfoId())
-            .append("loginName", getLoginName())
-            .append("ipaddr", getIpaddr())
-            .append("loginLocation", getLoginLocation())
-            .append("browser", getBrowser())
-            .append("os", getOs())
-            .append("status", getStatus())
-            .append("msg", getMsg())
-            .append("loginTime", getLoginTime())
-            .toString();
+        return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
+                .append("infoId", getInfoId())
+                .append("loginName", getLoginName())
+                .append("ipaddr", getIpaddr())
+                .append("loginLocation", getLoginLocation())
+                .append("browser", getBrowser())
+                .append("os", getOs())
+                .append("status", getStatus())
+                .append("msg", getMsg())
+                .append("role", getRole())
+                .append("loginTime", getLoginTime())
+                .toString();
     }
 }

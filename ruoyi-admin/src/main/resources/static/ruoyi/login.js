@@ -13,6 +13,19 @@ function login() {
     var password = $.common.trim($("input[name='password']").val());
     var validateCode = $("input[name='validateCode']").val();
     var rememberMe = $("input[name='rememberme']").is(':checked');
+    var role = $.common.trim($("select[name='role']").val()); // 获取 role 参数
+    if ($.common.isEmpty(username)) {
+        $.modal.msg("请输入用户名");
+        return false;
+    }
+    if ($.common.isEmpty(password)) {
+        $.modal.msg("请输入密码");
+        return false;
+    }
+    if ($.common.isEmpty(role)) {
+        $.modal.msg("请选择身份");
+        return false;
+    }
     if($.common.isEmpty(validateCode) && captchaEnabled) {
         $.modal.msg("请输入验证码");
         return false;
@@ -24,20 +37,24 @@ function login() {
             "username": username,
             "password": password,
             "validateCode": validateCode,
-            "rememberMe": rememberMe
+            "rememberMe": rememberMe,
+            "role": role // 添加 role 参数
         },
         beforeSend: function () {
             $.modal.loading($("#btnSubmit").data("loading"));
         },
         success: function(r) {
             if (r.code == web_status.SUCCESS) {
-                location.href = ctx + 'index';
+                location.href = r.redirect || (ctx + 'index');  // 使用后端返回的 redirect 字段
             } else {
                 $('.imgcode').click();
                 $(".code").val("");
                 $.modal.msg(r.msg);
             }
+        },
+        error: function(xhr) {
             $.modal.closeLoading();
+            $.modal.msg("请求失败：" + xhr.statusText);
         }
     });
 }
@@ -51,6 +68,12 @@ function validateRule() {
             },
             password: {
                 required: true
+            },
+            role: {
+                required: true // 添加 role 验证
+            },
+            validateCode: {
+                required: function() { return captchaEnabled; }
             }
         },
         messages: {
@@ -59,6 +82,12 @@ function validateRule() {
             },
             password: {
                 required: icon + "请输入您的密码",
+            },
+            role: {
+                required: icon + "请选择身份"
+            },
+            validateCode: {
+                required: icon + "请输入验证码"
             }
         },
         submitHandler: function(form) {
