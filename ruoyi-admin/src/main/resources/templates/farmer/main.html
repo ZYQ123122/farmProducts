@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>main页面</title>
+  <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
+  <link th:href="@{/css/font-awesome.min.css}" rel="stylesheet" />
+  <link th:href="@{/css/style.min.css}" rel="stylesheet" />
+</head>
+<body class="gray-bg">
+<div class="row border-bottom white-bg dashboard-header">
+  <div class="col-sm-7">
+    <h2>main</h2>
+    <p>main</p>
+    <p>main<span class="label label-success">v[[${version}]]</span></p>
+  </div>
+  <div class="col-sm-5 text-center">
+    <img th:src="@{/img/farmer-dashboard.png}" alt="这是什么" class="img-responsive" style="max-height: 180px; margin: 0 auto;" onerror="this.style.display='none'">
+  </div>
+</div>
+<div class="wrapper wrapper-content">
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="ibox">
+        <div class="ibox-title">
+          <h5>main</h5>
+        </div>
+        <div class="ibox-content">
+          <p><i class="fa fa-cubes text-info"></i> main</p>
+          <p><i class="fa fa-stethoscope text-success"></i> main</p>
+          <p><i class="fa fa-money text-warning"></i> main</p>
+          <p><i class="fa fa-comments-o text-primary"></i> main</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-8">
+      <div class="ibox">
+        <div class="ibox-title">
+          <h5>main</h5>
+        </div>
+        <div class="ibox-content">
+          <ol>
+            <li>main</li>
+            <li>main</li>
+            <li>main</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
