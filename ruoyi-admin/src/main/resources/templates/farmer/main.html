@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>农户首页</title>
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
+    <link th:href="@{/css/font-awesome.min.css}" rel="stylesheet" />
+    <link th:href="@{/css/style.min.css}" rel="stylesheet" />
+</head>
+<body class="gray-bg">
+<div class="row border-bottom white-bg dashboard-header">
+    <div class="col-sm-7">
+        <h2>农户工作台</h2>
+        <p>欢迎使用农户专属工作台，这里可以统一管理商品、联系专家并跟进融资与社区交流。</p>
+        <p>当前系统版本：<span class="label label-success">v[[${version}]]</span></p>
+    </div>
+    <div class="col-sm-5 text-center">
+        <img th:src="@{/img/farmer-dashboard.png}" alt="农户工作台" class="img-responsive" style="max-height: 180px; margin: 0 auto;" onerror="this.style.display='none'">
+    </div>
+</div>
+<div class="wrapper wrapper-content">
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>快速入口</h5>
+                </div>
+                <div class="ibox-content">
+                    <p><i class="fa fa-cubes text-info"></i> 商品管理，支持维护产品信息与买家需求。</p>
+                    <p><i class="fa fa-stethoscope text-success"></i> 专家咨询，随时预约专家获得生产建议。</p>
+                    <p><i class="fa fa-money text-warning"></i> 融资管理，帮助匹配资金渠道并提交申请。</p>
+                    <p><i class="fa fa-comments-o text-primary"></i> 交流社区，加入同行讨论共享种植经验。</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-8">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>使用贴士</h5>
+                </div>
+                <div class="ibox-content">
+                    <ol>
+                        <li>通过左侧导航选择模块，系统会在当前窗口中打开对应功能。</li>
+                        <li>在右上角可快速切换主题、锁屏或退出当前账号。</li>
+                        <li>若有新的合作需求，欢迎在交流社区发布话题。</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
