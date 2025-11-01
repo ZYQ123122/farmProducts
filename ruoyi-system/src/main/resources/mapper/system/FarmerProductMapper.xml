@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FarmerProductMapper">
+
+    <resultMap id="FarmerProductResult" type="com.ruoyi.system.domain.FarmerProduct">
+        <id property="id" column="id" />
+        <result property="farmerId" column="farmer_id" />
+        <result property="name" column="name" />
+        <result property="price" column="price" />
+        <result property="stock" column="stock" />
+        <result property="description" column="description" />
+        <result property="status" column="status" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+        <result property="isDeleted" column="is_deleted" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, farmer_id, name, price, stock, description, status, created_at, updated_at, is_deleted
+    </sql>
+
+    <select id="selectFarmerProductList" resultMap="FarmerProductResult">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM farmer_product
+        WHERE is_deleted = 0
+          AND farmer_id = #{farmerId}
+        <if test="status != null and status != ''">
+          AND status = #{status}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectFarmerProductById" resultMap="FarmerProductResult">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM farmer_product
+        WHERE id = #{id}
+          AND farmer_id = #{farmerId}
+          AND is_deleted = 0
+    </select>
+
+    <insert id="insertFarmerProduct" parameterType="com.ruoyi.system.domain.FarmerProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO farmer_product
+        (farmer_id, name, price, stock, description, status, created_at, updated_at, is_deleted)
+        VALUES
+        (#{farmerId}, #{name}, #{price}, #{stock}, #{description}, #{status},
+         NOW(), NOW(), #{isDeleted})
+    </insert>
+
+    <update id="updateFarmerProduct" parameterType="com.ruoyi.system.domain.FarmerProduct">
+        UPDATE farmer_product
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="stock != null">stock = #{stock},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+          AND farmer_id = #{farmerId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="softDeleteFarmerProduct">
+        UPDATE farmer_product
+        SET is_deleted = 1,
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND farmer_id = #{farmerId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="changeProductStatus">
+        UPDATE farmer_product
+        SET status = #{status},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND farmer_id = #{farmerId}
+          AND is_deleted = 0
+    </update>
+
+</mapper>

@@ -1,23 +1,318 @@
 <!DOCTYPE html>
 <html lang="zh" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>info页面</title>
-  <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
-  <link th:href="@{/css/style.min.css}" rel="stylesheet" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>农户产品信息</title>
+    <th:block th:include="include :: header('产品信息')" />
+    <th:block th:include="include :: layout-latest-css" />
+    <style>
+        .product-page-container {
+            padding: 10px 15px 15px;
+        }
+
+        .product-toolbar {
+            margin-bottom: 12px;
+        }
+
+        .product-card {
+            border: 1px solid #e7eaec;
+            border-radius: 4px;
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .product-card h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .product-card .product-info {
+            flex: 1;
+        }
+
+        .product-card .product-actions {
+            text-align: right;
+            margin-left: 20px;
+            white-space: nowrap;
+        }
+
+        .product-card .badge {
+            font-size: 13px;
+        }
+
+        .product-empty {
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+            background: #fff;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+        }
+
+        .modal .form-group {
+            margin-bottom: 15px;
+        }
+
+        .modal .control-label {
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body class="gray-bg">
-<div class="wrapper wrapper-content animated fadeInRight">
-  <div class="ibox">
-    <div class="ibox-title">
-      <h5>info</h5>
+<div class="container-div product-page-container">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="btn-group-sm product-toolbar">
+                <a class="btn btn-success" id="btnAdd"><i class="fa fa-plus"></i> 添加商品</a>
+            </div>
+        </div>
     </div>
-    <div class="ibox-content">
-      <p>info</p>
-      <p class="text-muted">info</p>
+    <div class="row">
+        <div class="col-sm-12">
+            <div id="productContainer"></div>
+        </div>
     </div>
-  </div>
 </div>
+
+<div class="modal fade" id="productModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="productModalTitle">添加商品</h4>
+            </div>
+            <div class="modal-body">
+                <form id="productForm" class="form-horizontal">
+                    <input type="hidden" id="productId">
+                    <input type="hidden" id="productStatus" value="off_shelf">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">商品名称：</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="productName" placeholder="请输入商品名称" required maxlength="100">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">商品单价：</label>
+                        <div class="col-sm-8">
+                            <input type="number" step="0.01" min="0" class="form-control" id="productPrice" placeholder="请输入商品单价" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">库存数量：</label>
+                        <div class="col-sm-8">
+                            <input type="number" min="0" class="form-control" id="productStock" placeholder="请输入库存数量" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">商品描述：</label>
+                        <div class="col-sm-8">
+                            <textarea class="form-control" rows="3" id="productDescription" placeholder="请输入商品描述"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">创建时间：</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="productCreatedAt" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">更新时间：</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="productUpdatedAt" readonly>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="btnSaveProduct">完成</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+    var productApiPrefix = ctx + "farmer/api/product";
+
+    function escapeHtml(value) {
+        return $('<div/>').text(value === null || value === undefined ? '' : value).html();
+    }
+
+    function formatCurrency(value) {
+        if (value === null || value === undefined || value === '') {
+            return '0.00';
+        }
+        var num = parseFloat(value);
+        if (isNaN(num)) {
+            return '0.00';
+        }
+        return num.toFixed(2);
+    }
+
+    function translateStatus(status) {
+        return status === 'on_shelf' ? '已上架' : '未上架';
+    }
+
+    function renderProducts(products) {
+        var container = $('#productContainer');
+        container.empty();
+        if (!products || products.length === 0) {
+            container.append('<div class="product-empty">暂无商品信息，请点击“添加商品”进行新增。</div>');
+            return;
+        }
+        products.forEach(function (item) {
+            var card = $('<div class="product-card"></div>');
+            var infoHtml = '' +
+                '<div class="product-info">' +
+                '<h4>' + escapeHtml(item.name) + ' <span class="badge badge-info">' + translateStatus(item.status) + '</span></h4>' +
+                '<p>商品单价：<strong>' + formatCurrency(item.price) + ' 元</strong></p>' +
+                '<p>库存数量：<strong>' + (item.stock != null ? item.stock : 0) + ' 件</strong></p>' +
+                '</div>';
+            var actionsHtml = '' +
+                '<div class="product-actions">' +
+                '<button class="btn btn-xs btn-primary" data-id="' + item.id + '" data-action="edit"><i class="fa fa-edit"></i> 编辑</button> ' +
+                '<button class="btn btn-xs btn-danger" data-id="' + item.id + '" data-name="' + escapeHtml(item.name) + '" data-action="delete"><i class="fa fa-trash"></i> 删除</button>' +
+                '</div>';
+            card.append(infoHtml).append(actionsHtml);
+            card.data('product', item);
+            container.append(card);
+        });
+    }
+
+    function resetProductForm() {
+        $('#productId').val('');
+        $('#productStatus').val('off_shelf');
+        $('#productName').val('');
+        $('#productPrice').val('');
+        $('#productStock').val('');
+        $('#productDescription').val('');
+        $('#productCreatedAt').val('');
+        $('#productUpdatedAt').val('');
+    }
+
+    function openProductModal(product) {
+        resetProductForm();
+        if (product) {
+            $('#productModalTitle').text('编辑商品');
+            $('#productId').val(product.id);
+            $('#productStatus').val(product.status || 'off_shelf');
+            $('#productName').val(product.name || '');
+            $('#productPrice').val(product.price);
+            $('#productStock').val(product.stock);
+            $('#productDescription').val(product.description || '');
+            $('#productCreatedAt').val(product.createdAt || '');
+            $('#productUpdatedAt').val(product.updatedAt || '');
+        } else {
+            $('#productModalTitle').text('添加商品');
+        }
+        $('#productModal').modal('show');
+    }
+
+    function validateProductForm() {
+        var name = $('#productName').val().trim();
+        var price = parseFloat($('#productPrice').val());
+        var stock = parseInt($('#productStock').val(), 10);
+        if (!name) {
+            $.modal.msgWarning('请填写商品名称');
+            return false;
+        }
+        if (isNaN(price) || price < 0) {
+            $.modal.msgWarning('请填写正确的商品单价');
+            return false;
+        }
+        if (isNaN(stock) || stock < 0) {
+            $.modal.msgWarning('请填写正确的库存数量');
+            return false;
+        }
+        return true;
+    }
+
+    function submitProduct() {
+        if (!validateProductForm()) {
+            return;
+        }
+        var id = $('#productId').val();
+        var payload = {
+            name: $('#productName').val().trim(),
+            price: $('#productPrice').val(),
+            stock: $('#productStock').val(),
+            description: $('#productDescription').val(),
+            status: $('#productStatus').val()
+        };
+        var method = id ? 'PUT' : 'POST';
+        var url = productApiPrefix + (id ? '/' + id : '');
+        $.ajax({
+            url: url,
+            type: method,
+            data: JSON.stringify(payload),
+            contentType: 'application/json;charset=utf-8',
+            success: function (res) {
+                if (res.code === 0) {
+                    $('#productModal').modal('hide');
+                    $.modal.msgSuccess(res.msg || '操作成功');
+                    loadProducts();
+                } else {
+                    $.modal.msgError(res.msg || '操作失败');
+                }
+            }
+        });
+    }
+
+    function loadProducts() {
+        $.get(productApiPrefix + '/list', function (res) {
+            if (res.code === 0) {
+                renderProducts(res.data || []);
+            } else {
+                $('#productContainer').html('<div class="product-empty">加载商品信息失败：' + (res.msg || '未知错误') + '</div>');
+            }
+        });
+    }
+
+    function deleteProduct(id, name) {
+        $.modal.confirm('确认删除商品【' + name + '】吗？', function () {
+            $.ajax({
+                url: productApiPrefix + '/' + id,
+                type: 'DELETE',
+                success: function (res) {
+                    if (res.code === 0) {
+                        $.modal.msgSuccess('删除成功');
+                        loadProducts();
+                    } else {
+                        $.modal.msgError(res.msg || '删除失败');
+                    }
+                }
+            });
+        });
+    }
+
+    $(function () {
+        loadProducts();
+
+        $('#btnAdd').on('click', function () {
+            openProductModal(null);
+        });
+
+        $('#btnSaveProduct').on('click', submitProduct);
+
+        $('#productContainer').on('click', 'button[data-action="edit"]', function () {
+            var product = $(this).closest('.product-card').data('product');
+            openProductModal(product);
+        });
+
+        $('#productContainer').on('click', 'button[data-action="delete"]', function () {
+            var id = $(this).data('id');
+            var name = $(this).data('name');
+            deleteProduct(id, name);
+        });
+    });
+</script>
 </body>
 </html>
