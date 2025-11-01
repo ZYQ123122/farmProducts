@@ -3,21 +3,180 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>manager页面</title>
-    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
-    <link th:href="@{/css/style.min.css}" rel="stylesheet" />
+    <title>农户商品管理</title>
+    <th:block th:include="include :: header('商品管理')" />
+    <th:block th:include="include :: layout-latest-css" />
+    <style>
+        .product-page {
+            padding: 8px 0 0 0;
+        }
+
+        .status-toolbar {
+            margin-bottom: 6px;
+        }
+
+        #manageContainer {
+            margin-top: 0;
+        }
+
+        .manage-card {
+            border: 1px solid #e7eaec;
+            border-radius: 4px;
+            background: #fff;
+            padding: 18px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .manage-card h4 {
+            margin: 0 0 8px 0;
+        }
+
+        .manage-card .badge {
+            font-size: 13px;
+        }
+
+        .manage-card .product-info {
+            flex: 1;
+        }
+
+        .manage-card .product-actions {
+            white-space: nowrap;
+            margin-left: 16px;
+        }
+
+        .manage-empty {
+            text-align: center;
+            padding: 36px 0;
+            color: #999;
+            background: #fff;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body class="gray-bg">
-<div class="wrapper wrapper-content animated fadeInRight">
-    <div class="ibox">
-        <div class="ibox-title">
-            <h5>manager</h5>
-        </div>
-        <div class="ibox-content">
-            <p>manager</p>
-            <p class="text-muted">manager</p>
-        </div>
+<div class="container-div product-page">
+    <div class="btn-group status-toolbar">
+        <a class="btn btn-default" data-status="on_shelf" id="btnOnShelf">已上架</a>
+        <a class="btn btn-primary" data-status="off_shelf" id="btnOffShelf">未上架</a>
     </div>
+    <div id="manageContainer"></div>
 </div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+    var productApiPrefix = ctx + "farmer/api/product";
+    var currentStatus = 'off_shelf';
+
+    function escapeHtml(value) {
+        return $('<div/>').text(value === null || value === undefined ? '' : value).html();
+    }
+
+    function formatCurrency(value) {
+        if (value === null || value === undefined || value === '') {
+            return '0.00';
+        }
+        var num = parseFloat(value);
+        if (isNaN(num)) {
+            return '0.00';
+        }
+        return num.toFixed(2);
+    }
+
+    function translateStatus(status) {
+        return status === 'on_shelf' ? '已上架' : '未上架';
+    }
+
+    function renderManageProducts(products) {
+        var container = $('#manageContainer');
+        container.empty();
+        if (!products || products.length === 0) {
+            container.append('<div class="manage-empty">当前状态下暂无商品。</div>');
+            return;
+        }
+        products.forEach(function (item) {
+            var card = $('<div class="manage-card"></div>');
+            card.data('product', item);
+
+            var infoHtml = '' +
+                '<div class="product-info">' +
+                '<h4>' + escapeHtml(item.name) + ' <span class="badge badge-info">' + translateStatus(item.status) + '</span></h4>' +
+                '<p>商品单价：<strong>' + formatCurrency(item.price) + ' 元</strong></p>' +
+                '<p>库存数量：<strong>' + (item.stock != null ? item.stock : 0) + ' 件</strong></p>' +
+                '</div>';
+            card.append(infoHtml);
+
+            var actionBtn;
+            if (item.status === 'on_shelf') {
+                actionBtn = '<button class="btn btn-warning btn-xs" data-action="unshelf" data-id="' + item.id + '"><i class="fa fa-arrow-down"></i> 下架</button>';
+            } else {
+                actionBtn = '<button class="btn btn-success btn-xs" data-action="shelf" data-id="' + item.id + '"><i class="fa fa-arrow-up"></i> 上架</button>';
+            }
+            card.append('<div class="product-actions">' + actionBtn + '</div>');
+            container.append(card);
+        });
+    }
+
+    function loadManageProducts(status) {
+        currentStatus = status;
+        $.get(productApiPrefix + '/list', { status: status }, function (res) {
+            if (res.code === 0) {
+                renderManageProducts(res.data || []);
+            } else {
+                $('#manageContainer').html('<div class="manage-empty">加载失败：' + (res.msg || '未知错误') + '</div>');
+            }
+        });
+    }
+
+    function changeStatus(id, status) {
+        $.ajax({
+            url: productApiPrefix + '/' + id + '/status',
+            type: 'PUT',
+            data: JSON.stringify({ status: status }),
+            contentType: 'application/json;charset=utf-8',
+            success: function (res) {
+                if (res.code === 0) {
+                    $.modal.msgSuccess(res.msg || '状态更新成功');
+                    loadManageProducts(currentStatus);
+                } else {
+                    $.modal.msgError(res.msg || '状态更新失败');
+                }
+            }
+        });
+    }
+
+    function toggleToolbar(status) {
+        $('#btnOnShelf').toggleClass('btn-primary', status === 'on_shelf').toggleClass('btn-default', status !== 'on_shelf');
+        $('#btnOffShelf').toggleClass('btn-primary', status === 'off_shelf').toggleClass('btn-default', status !== 'off_shelf');
+    }
+
+    $(function () {
+        toggleToolbar(currentStatus);
+        loadManageProducts(currentStatus);
+
+        $('#btnOnShelf, #btnOffShelf').on('click', function () {
+            var status = $(this).data('status');
+            if (status === currentStatus) {
+                return;
+            }
+            toggleToolbar(status);
+            loadManageProducts(status);
+        });
+
+        $('#manageContainer').on('click', 'button[data-action="shelf"]', function () {
+            var id = $(this).data('id');
+            changeStatus(id, 'on_shelf');
+        });
+
+        $('#manageContainer').on('click', 'button[data-action="unshelf"]', function () {
+            var id = $(this).data('id');
+            changeStatus(id, 'off_shelf');
+        });
+    });
+</script>
 </body>
 </html>
