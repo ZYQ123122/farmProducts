@@ -77,6 +77,10 @@
     var productApiPrefix = ctx + "farmer/api/product";
     var currentStatus = 'off_shelf';
 
+    function escapeHtml(value) {
+        return $('<div/>').text(value === null || value === undefined ? '' : value).html();
+    }
+
     function formatCurrency(value) {
         if (value === null || value === undefined || value === '') {
             return '0.00';
@@ -105,7 +109,7 @@
 
             var infoHtml = '' +
                 '<div class="product-info">' +
-                '<h4>' + $.common.htmlEscape(item.name || '') + ' <span class="badge badge-info">' + translateStatus(item.status) + '</span></h4>' +
+                '<h4>' + escapeHtml(item.name) + ' <span class="badge badge-info">' + translateStatus(item.status) + '</span></h4>' +
                 '<p>商品单价：<strong>' + formatCurrency(item.price) + ' 元</strong></p>' +
                 '<p>库存数量：<strong>' + (item.stock != null ? item.stock : 0) + ' 件</strong></p>' +
                 '</div>';
