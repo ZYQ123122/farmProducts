@@ -7,8 +7,12 @@
     <th:block th:include="include :: header('产品信息')" />
     <th:block th:include="include :: layout-latest-css" />
     <style>
+        .product-page-container {
+            padding: 10px 15px 15px;
+        }
+
         .product-toolbar {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .product-card {
@@ -61,7 +65,7 @@
     </style>
 </head>
 <body class="gray-bg">
-<div class="container-div">
+<div class="container-div product-page-container">
     <div class="row">
         <div class="col-sm-12">
             <div class="btn-group-sm product-toolbar">
