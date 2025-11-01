@@ -721,3 +721,24 @@ create table gen_table_column (
   update_time       datetime                                   comment '更新时间',
   primary key (column_id)
 ) engine=innodb auto_increment=1 comment = '代码生成业务表字段';
+
+
+-- ----------------------------
+-- 21、农户商品信息表
+-- ----------------------------
+drop table if exists farmer_product;
+create table farmer_product (
+                                id           bigint(20)    not null auto_increment comment '商品唯一标识',
+                                farmer_id    bigint(20)    not null                comment '农户用户ID',
+                                name         varchar(100)  not null                comment '商品名称',
+                                price        decimal(10,2) not null                comment '商品价格',
+                                stock        int           not null                comment '库存数量',
+                                description  text                                  comment '商品描述',
+                                status       enum('on_shelf','off_shelf') not null default 'off_shelf' comment '商品状态（上架/下架）',
+                                created_at   datetime      not null default current_timestamp comment '创建时间',
+                                updated_at   datetime      not null default current_timestamp on update current_timestamp comment '更新时间',
+                                is_deleted   tinyint(1)    not null default 0       comment '软删除（0未删除 1已删除）',
+                                primary key (id),
+                                key idx_farmer_product_farmer (farmer_id),
+                                constraint fk_farmer_product_user foreign key (farmer_id) references sys_user (user_id)
+) engine=innodb comment = '农户商品信息表';
