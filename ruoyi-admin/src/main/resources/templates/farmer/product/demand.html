@@ -87,6 +87,10 @@
         return status === 'responded' ? 'badge badge-success' : 'badge badge-warning';
     }
 
+    function escapeHtml(value) {
+        return $('<div/>').text(value === null || value === undefined ? '' : value).html();
+    }
+
     function renderFarmerRequirements(list) {
         var $list = $('#farmerDemandList');
         $list.empty();
@@ -97,20 +101,20 @@
         list.forEach(function(item) {
             var card = $('<div class="demand-card"></div>');
             var header = $('<div class="demand-card-header"></div>');
-            header.append('<h4>' + $.common.htmlEscape(item.productName || '') + '</h4>');
+            header.append('<h4>' + escapeHtml(item.productName || '') + '</h4>');
             header.append('<span class="' + statusBadgeClass(item.status) + '">' + translateStatus(item.status) + '</span>');
             card.append(header);
 
-            var metaHtml = '<div class="demand-meta">买家ID：<strong>' + (item.buyerId != null ? item.buyerId : '-') + '</strong>';
-            metaHtml += ' ｜ 需求数量：<strong>' + (item.quantity != null ? item.quantity : '-') + '</strong>';
+            var metaHtml = '<div class="demand-meta">买家ID：<strong>' + (item.buyerId != null ? escapeHtml(item.buyerId) : '-') + '</strong>';
+            metaHtml += ' ｜ 需求数量：<strong>' + (item.quantity != null ? escapeHtml(item.quantity) : '-') + '</strong>';
             if (item.createdAt) {
-                metaHtml += ' ｜ 添加时间：' + item.createdAt;
+                metaHtml += ' ｜ 添加时间：' + escapeHtml(item.createdAt);
             }
             metaHtml += '</div>';
             card.append(metaHtml);
 
             if (item.specs) {
-                card.append('<div class="demand-meta">规格说明：' + $.common.htmlEscape(item.specs) + '</div>');
+                card.append('<div class="demand-meta">规格说明：' + escapeHtml(item.specs) + '</div>');
             }
 
             $list.append(card);
@@ -122,7 +126,7 @@
             if (res.code === 0) {
                 renderFarmerRequirements(res.data || []);
             } else {
-                $('#farmerDemandList').html('<div class="demand-empty">加载失败：' + $.common.htmlEscape(res.msg || '未知错误') + '</div>');
+                $('#farmerDemandList').html('<div class="demand-empty">加载失败：' + escapeHtml(res.msg || '未知错误') + '</div>');
             }
         }).fail(function() {
             $('#farmerDemandList').html('<div class="demand-empty">加载失败，请稍后重试。</div>');
