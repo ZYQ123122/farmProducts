@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('需求管理')" />
+    <style>
+        .buyer-requirement-page {
+            padding: 10px 0 0 0;
+        }
+
+        .buyer-requirement-page .ibox {
+            margin-bottom: 0;
+        }
+
+        .buyer-requirement-page .ibox-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-right: 20px;
+        }
+
+        .buyer-requirement-page .ibox-content {
+            padding: 20px;
+            min-height: 420px;
+        }
+
+        .requirement-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 0;
+        }
+
+        .requirement-card {
+            border: 1px solid #e7eaec;
+            border-radius: 4px;
+            padding: 16px 20px;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        .requirement-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .requirement-card-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .requirement-meta {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .requirement-empty {
+            padding: 48px 0;
+            text-align: center;
+            color: #999;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+
+        .badge-status {
+            cursor: pointer;
+        }
+
+        .modal-footer .btn + .btn {
+            margin-left: 8px;
+        }
+
+        .form-group.required label:after {
+            content: '*';
+            color: #f05050;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body class="gray-bg">
+<div class="wrapper wrapper-content animated fadeInRight buyer-requirement-page">
+    <div class="ibox">
+        <div class="ibox-title">
+            <h5>买家需求管理</h5>
+            <div class="ibox-tools">
+                <button class="btn btn-primary btn-sm" id="btnAddRequirement"><i class="fa fa-plus"></i> 添加需求</button>
+            </div>
+        </div>
+        <div class="ibox-content">
+            <div id="requirementList" class="requirement-list"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="requirementModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">添加需求</h4>
+            </div>
+            <div class="modal-body">
+                <form id="requirementForm">
+                    <div class="form-group required">
+                        <label for="productName">需求商品名称</label>
+                        <input type="text" class="form-control" id="productName" name="productName" maxlength="100" placeholder="请输入需求商品名称" required>
+                    </div>
+                    <div class="form-group required">
+                        <label for="quantity">需求数量</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" min="1" placeholder="请输入需求数量" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="specs">商品规格（选填）</label>
+                        <textarea class="form-control" id="specs" name="specs" rows="3" placeholder="填写期望的规格说明"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="btnSaveRequirement">完成</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+    var requirementApiPrefix = ctx + "buyer/api/requirements";
+
+    function translateStatus(status) {
+        return status === 'responded' ? '已响应' : '未满足';
+    }
+
+    function getNextStatus(status) {
+        return status === 'responded' ? 'unsatisfied' : 'responded';
+    }
+
+    function renderRequirementList(list) {
+        var $list = $('#requirementList');
+        $list.empty();
+        if (!list || list.length === 0) {
+            $list.append('<div class="requirement-empty">暂未添加任何需求，点击上方“添加需求”开始记录。</div>');
+            return;
+        }
+        list.forEach(function(item) {
+            var card = $('<div class="requirement-card"></div>');
+            var header = $('<div class="requirement-card-header"></div>');
+            header.append('<h4>' + $.common.htmlEscape(item.productName || '') + '</h4>');
+            var badgeClass = item.status === 'responded' ? 'badge badge-success' : 'badge badge-warning';
+            var badge = $('<span class="badge-status ' + badgeClass + '" data-id="' + item.id + '" data-status="' + item.status + '">' + translateStatus(item.status) + '</span>');
+            header.append(badge);
+            card.append(header);
+
+            var metaHtml = '<div class="requirement-meta">需求数量：<strong>' + (item.quantity != null ? item.quantity : '-') + '</strong>';
+            if (item.createdAt) {
+                metaHtml += ' ｜ 创建时间：' + item.createdAt;
+            }
+            metaHtml += '</div>';
+            card.append(metaHtml);
+            $list.append(card);
+        });
+    }
+
+    function loadRequirements() {
+        $.get(requirementApiPrefix + '/list', function(res) {
+            if (res.code === 0) {
+                renderRequirementList(res.data || []);
+            } else {
+                $('#requirementList').html('<div class="requirement-empty">加载失败：' + $.common.htmlEscape(res.msg || '未知错误') + '</div>');
+            }
+        }).fail(function() {
+            $('#requirementList').html('<div class="requirement-empty">加载失败，请稍后重试。</div>');
+        });
+    }
+
+    function submitRequirement() {
+        var form = $('#requirementForm')[0];
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        var productName = $.trim($('#productName').val());
+        var quantity = parseInt($('#quantity').val(), 10);
+        if (!productName) {
+            $.modal.msgWarning('请填写需求商品名称');
+            return;
+        }
+        if (!quantity || quantity < 1) {
+            $.modal.msgWarning('需求数量必须大于0');
+            return;
+        }
+        var payload = {
+            productName: productName,
+            quantity: quantity,
+            specs: $.trim($('#specs').val())
+        };
+        $('#btnSaveRequirement').prop('disabled', true).text('提交中...');
+        $.ajax({
+            url: requirementApiPrefix,
+            type: 'POST',
+            data: JSON.stringify(payload),
+            contentType: 'application/json;charset=utf-8'
+        }).done(function(res) {
+            if (res.code === 0) {
+                $.modal.msgSuccess(res.msg || '创建成功');
+                $('#requirementModal').modal('hide');
+                $('#requirementForm')[0].reset();
+                loadRequirements();
+            } else {
+                $.modal.msgError(res.msg || '创建失败');
+            }
+        }).fail(function() {
+            $.modal.msgError('创建失败，请稍后重试');
+        }).always(function() {
+            $('#btnSaveRequirement').prop('disabled', false).text('完成');
+        });
+    }
+
+    function updateRequirementStatus(id, status) {
+        $.ajax({
+            url: requirementApiPrefix + '/' + id + '/status',
+            type: 'PUT',
+            data: JSON.stringify({ status: status }),
+            contentType: 'application/json;charset=utf-8'
+        }).done(function(res) {
+            if (res.code === 0) {
+                $.modal.msgSuccess(res.msg || '状态更新成功');
+                loadRequirements();
+            } else {
+                $.modal.msgError(res.msg || '状态更新失败');
+            }
+        }).fail(function() {
+            $.modal.msgError('状态更新失败，请稍后重试');
+        });
+    }
+
+    $(function() {
+        loadRequirements();
+
+        $('#btnAddRequirement').on('click', function() {
+            $('#requirementForm')[0].reset();
+            $('#requirementModal').modal('show');
+        });
+
+        $('#btnSaveRequirement').on('click', function() {
+            submitRequirement();
+        });
+
+        $('#requirementList').on('click', '.badge-status', function() {
+            var id = $(this).data('id');
+            var currentStatus = $(this).data('status');
+            var nextStatus = getNextStatus(currentStatus);
+            var nextLabel = translateStatus(nextStatus);
+            $.modal.confirm('确定将状态切换为“' + nextLabel + '”吗？', function() {
+                updateRequirementStatus(id, nextStatus);
+            });
+        });
+    });
+</script>
+</body>
+</html>

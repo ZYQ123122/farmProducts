@@ -742,3 +742,21 @@ create table farmer_product (
                                 key idx_farmer_product_farmer (farmer_id),
                                 constraint fk_farmer_product_user foreign key (farmer_id) references sys_user (user_id)
 ) engine=innodb comment = '农户商品信息表';
+
+-- ----------------------------
+-- 22、买家需求信息表
+-- ----------------------------
+drop table if exists buyer_requirement;
+create table buyer_requirement (
+                                id            bigint(20)   not null auto_increment comment '需求ID',
+                                buyer_id      bigint(20)   not null                comment '买家用户ID',
+                                product_name  varchar(100) not null                comment '需求商品名称',
+                                quantity      int          not null                comment '需求数量',
+                                specs         text                                comment '商品规格',
+                                status        enum('unsatisfied','responded') not null default 'unsatisfied' comment '需求状态',
+                                created_at    datetime     not null default current_timestamp comment '创建时间',
+                                updated_at    datetime     not null default current_timestamp on update current_timestamp comment '更新时间',
+                                primary key (id),
+                                key idx_buyer_requirement_buyer (buyer_id),
+                                constraint fk_buyer_requirement_user foreign key (buyer_id) references sys_user (user_id)
+) engine=innodb comment = '买家需求信息表';

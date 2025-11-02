@@ -1,23 +1,140 @@
 <!DOCTYPE html>
 <html lang="zh" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>demand页面</title>
-  <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
-  <link th:href="@{/css/style.min.css}" rel="stylesheet" />
+    <th:block th:include="include :: header('买家需求')" />
+    <style>
+        .farmer-demand-page {
+            padding: 10px 0 0 0;
+        }
+
+        .demand-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .demand-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .demand-card {
+            border: 1px solid #e7eaec;
+            border-radius: 4px;
+            padding: 16px 20px;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        .demand-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .demand-card-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .demand-meta {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .demand-empty {
+            padding: 48px 0;
+            text-align: center;
+            color: #999;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+
+        .badge-status {
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+    </style>
 </head>
 <body class="gray-bg">
-<div class="wrapper wrapper-content animated fadeInRight">
-  <div class="ibox">
-    <div class="ibox-title">
-      <h5>demand</h5>
+<div class="wrapper wrapper-content animated fadeInRight farmer-demand-page">
+    <div class="ibox">
+        <div class="ibox-title">
+            <h5>买家需求列表</h5>
+        </div>
+        <div class="ibox-content">
+            <div class="demand-toolbar">
+                <button class="btn btn-default btn-sm" id="btnRefresh"><i class="fa fa-refresh"></i> 刷新</button>
+            </div>
+            <div id="farmerDemandList" class="demand-list"></div>
+        </div>
     </div>
-    <div class="ibox-content">
-      <p>demand</p>
-      <p class="text-muted">demand</p>
-    </div>
-  </div>
 </div>
+
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+    var buyerRequirementApi = ctx + "farmer/api/buyerRequirements";
+
+    function translateStatus(status) {
+        return status === 'responded' ? '已响应' : '未满足';
+    }
+
+    function statusBadgeClass(status) {
+        return status === 'responded' ? 'badge badge-success' : 'badge badge-warning';
+    }
+
+    function renderFarmerRequirements(list) {
+        var $list = $('#farmerDemandList');
+        $list.empty();
+        if (!list || list.length === 0) {
+            $list.append('<div class="demand-empty">暂无买家需求信息。</div>');
+            return;
+        }
+        list.forEach(function(item) {
+            var card = $('<div class="demand-card"></div>');
+            var header = $('<div class="demand-card-header"></div>');
+            header.append('<h4>' + $.common.htmlEscape(item.productName || '') + '</h4>');
+            header.append('<span class="' + statusBadgeClass(item.status) + '">' + translateStatus(item.status) + '</span>');
+            card.append(header);
+
+            var metaHtml = '<div class="demand-meta">买家ID：<strong>' + (item.buyerId != null ? item.buyerId : '-') + '</strong>';
+            metaHtml += ' ｜ 需求数量：<strong>' + (item.quantity != null ? item.quantity : '-') + '</strong>';
+            if (item.createdAt) {
+                metaHtml += ' ｜ 添加时间：' + item.createdAt;
+            }
+            metaHtml += '</div>';
+            card.append(metaHtml);
+
+            if (item.specs) {
+                card.append('<div class="demand-meta">规格说明：' + $.common.htmlEscape(item.specs) + '</div>');
+            }
+
+            $list.append(card);
+        });
+    }
+
+    function loadFarmerRequirements() {
+        $.get(buyerRequirementApi + '/list', function(res) {
+            if (res.code === 0) {
+                renderFarmerRequirements(res.data || []);
+            } else {
+                $('#farmerDemandList').html('<div class="demand-empty">加载失败：' + $.common.htmlEscape(res.msg || '未知错误') + '</div>');
+            }
+        }).fail(function() {
+            $('#farmerDemandList').html('<div class="demand-empty">加载失败，请稍后重试。</div>');
+        });
+    }
+
+    $(function() {
+        loadFarmerRequirements();
+        $('#btnRefresh').on('click', function() {
+            loadFarmerRequirements();
+        });
+    });
+</script>
 </body>
 </html>
