@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.system;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
@@ -145,6 +146,11 @@ public class SysUserController extends BaseController
         {
             return error("新增用户'" + user.getLoginName() + "'失败，邮箱账号已存在");
         }
+        // 校验 userType 是否合法
+        List<String> validUserTypes = Arrays.asList("00", "01", "02", "03", "04", "05");
+        if (user.getUserType() == null || !validUserTypes.contains(user.getUserType())) {
+            return error("用户身份不合法，请选择正确的身份类型");
+        }
         user.setSalt(ShiroUtils.randomSalt());
         user.setPassword(passwordService.encryptPassword(user.getLoginName(), user.getPassword(), user.getSalt()));
         user.setPwdUpdateDate(DateUtils.getNowDate());
@@ -205,6 +211,10 @@ public class SysUserController extends BaseController
         else if (StringUtils.isNotEmpty(user.getEmail()) && !userService.checkEmailUnique(user))
         {
             return error("修改用户'" + user.getLoginName() + "'失败，邮箱账号已存在");
+        }
+        List<String> validUserTypes = Arrays.asList("farmer", "expert", "bank", "buyer", "admin");
+        if (user.getUserType() == null || !validUserTypes.contains(user.getUserType())) {
+            return error("用户身份不合法，请选择正确的身份类型");
         }
         user.setUpdateBy(getLoginName());
         AuthorizationUtils.clearAllCachedAuthorizationInfo();
