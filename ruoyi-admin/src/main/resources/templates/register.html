@@ -42,14 +42,13 @@
                 <h4 class="no-margins">注册：</h4>
                 <!-- 删除了"你若不离不弃，我必生死相依"这句话 -->
 
-                <!-- 新增：身份选择下拉框 -->
-                <select name="userType" class="form-control uname" placeholder="请选择身份">
+                <!-- 注册页身份选择框 -->
+                <select name="userType" class="form-control" required>
                     <option value="">--请选择身份--</option>
-                    <option value="farmer">农户</option>
-                    <option value="expert">专家</option>
-                    <option value="bank">银行</option>
-                    <option value="buyer">买家</option>
-                    <option value="admin">管理员</option>
+                    <option value="02">农户</option>
+                    <option value="03">专家</option>
+                    <option value="04">银行</option>
+                    <option value="05">买家</option>
                 </select>
 
                 <input type="text"     name="username" class="form-control uname"         placeholder="用户名"   maxlength="20" />

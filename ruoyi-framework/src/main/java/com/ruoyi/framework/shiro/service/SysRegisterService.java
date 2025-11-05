@@ -34,6 +34,8 @@ public class SysRegisterService
      */
     public String register(SysUser user)
     {
+        System.out.println("注册服务接收的 userType：" + user.getUserType());
+
         String msg = "", loginName = user.getLoginName(), password = user.getPassword();
 
         if (ShiroConstants.CAPTCHA_ERROR.equals(ServletUtils.getRequest().getAttribute(ShiroConstants.CURRENT_CAPTCHA)))
