@@ -69,6 +69,12 @@ public class FarmerController extends BaseController {
         return "farmer/product/contact";
     }
 
+
+    @GetMapping("/order/manage")
+    public String orderManage() {
+        return "farmer/order/manage";
+    }
+
     @GetMapping("/expert/appointment")
     public String expertAppointment() {
         return "farmer/expert/appointment";

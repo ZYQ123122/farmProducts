@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('订单管理')" />
+</head>
+<body class="gray-bg">
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="ibox">
+        <div class="ibox-title">
+            <h5>订单管理</h5>
+        </div>
+        <div class="ibox-content">
+            <div class="alert alert-info">
+                查看所有在您农场下的订单，您可以接单处理。订单状态变为"已确认"后等待买家确认收货后，订单状态会自动变更为"已完成"。
+            </div>
+            <table class="table table-striped" id="farmerOrderTable">
+                <thead>
+                <tr>
+                    <th>订单ID</th>
+                    <th>买家ID</th>
+                    <th>商品ID</th>
+                    <th>商品名称</th>
+                    <th>购买数量</th>
+                    <th>总价（元）</th>
+                    <th>订单状态</th>
+                    <th class="text-center">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td colspan="8" class="text-center text-muted">正在加载订单信息...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<th:block th:include="include :: footer" />
+
+<script th:inline="javascript">
+    var ctx = [[@{/}]];
+    var farmerOrderApiPrefix = ctx + "farmer/api/order";
+
+    function escapeHtml(text) {
+        if (text === undefined || text === null) {
+            return '';
+        }
+        return $('<div/>').text(text).html();
+    }
+
+    function formatPrice(value) {
+        if (value === undefined || value === null) {
+            return '0.00';
+        }
+        return parseFloat(value).toFixed(2);
+    }
+
+    function formatStatus(status) {
+        switch (status) {
+            case 'pending':
+                return '待确认';
+            case 'confirmed':
+                return '已确认';
+            case 'completed':
+                return '已完成';
+            default:
+                return status || '-';
+        }
+    }
+
+    function renderFarmerOrders(orders) {
+        var tbody = $('#farmerOrderTable tbody');
+        tbody.empty();
+        if (!orders || orders.length === 0) {
+            tbody.append('<tr><td colspan="8" class="text-center text-muted">暂无订单</td></tr>');
+            return;
+        }
+        orders.forEach(function (item) {
+            var row = $('<tr></tr>');
+            row.append('<td>' + escapeHtml(item.id) + '</td>');
+            row.append('<td>' + escapeHtml(item.buyerId) + '</td>');
+            row.append('<td>' + escapeHtml(item.productId) + '</td>');
+            row.append('<td>' + escapeHtml(item.productName || '') + '</td>');
+            row.append('<td>' + escapeHtml(item.quantity) + '</td>');
+            row.append('<td>' + formatPrice(item.totalPrice) + '</td>');
+            row.append('<td>' + formatStatus(item.status) + '</td>');
+
+            var action = '';
+            if (item.status === 'pending') {
+                action = '<button type="button" class="btn btn-primary btn-xs" data-action="confirm" data-id="' + item.id + '">接单</button>';
+            } else if (item.status === 'confirmed') {
+                action = '<span class="text-info">已接单</span>';
+            } else {
+                action = '<span class="text-success">已完成</span>';
+            }
+            row.append('<td class="text-center">' + action + '</td>');
+            tbody.append(row);
+        });
+    }
+
+    function loadFarmerOrders() {
+        $('#farmerOrderTable tbody').html('<tr><td colspan="8" class="text-center text-muted">正在加载订单信息...</td></tr>');
+        $.get(farmerOrderApiPrefix + "/list", function (res) {
+            if (res.code === 0) {
+                renderFarmerOrders(res.data || []);
+            } else {
+                $('#farmerOrderTable tbody').html('<tr><td colspan="8" class="text-center text-danger">' + escapeHtml(res.msg || '加载失败') + '</td></tr>');
+            }
+        }).fail(function () {
+            $('#farmerOrderTable tbody').html('<tr><td colspan="8" class="text-center text-danger">加载订单信息失败，请稍后重试。</td></tr>');
+        });
+    }
+
+    function confirmOrder(orderId) {
+        layer.confirm('确认接单此订单？', function (index) {
+            $.ajax({
+                url: farmerOrderApiPrefix + "/" + orderId + "/confirm",
+                type: "PUT",
+                success: function (res) {
+                    if (res.code === 0) {
+                        layer.msg(res.msg || '接单成功', { icon: 1 });
+                        loadFarmerOrders();
+                    } else {
+                        layer.msg(res.msg || '操作失败', { icon: 5 });
+                    }
+                },
+                error: function () {
+                    layer.msg('操作失败，请稍后重试', { icon: 5 });
+                }
+            });
+            layer.close(index);
+        });
+    }
+
+    $(function () {
+        loadFarmerOrders();
+
+        $('#farmerOrderTable').on('click', 'button[data-action="confirm"]', function () {
+            var orderId = $(this).data('id');
+            if (orderId) {
+                confirmOrder(orderId);
+            }
+        });
+    });
+</script>
+</body>
+</html>
