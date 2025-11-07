@@ -42,6 +42,26 @@
 		AND is_deleted = 0
 	</select>
 
+	<select id="selectAvailableProductList" resultMap="FarmerProductResult">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM farmer_product
+		WHERE is_deleted = 0
+		  AND status = 'on_shelf'
+		  AND stock > 0
+		ORDER BY farmer_id ASC, created_at DESC
+	</select>
+
+	<select id="selectAvailableProductById" resultMap="FarmerProductResult">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM farmer_product
+		WHERE id = #{id}
+		  AND is_deleted = 0
+		  AND status = 'on_shelf'
+		LIMIT 1
+	</select>
+
 	<insert id="insertFarmerProduct" parameterType="com.ruoyi.system.domain.FarmerProduct" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO farmer_product
 		(farmer_id, name, price, stock, description, status, created_at, updated_at, is_deleted)
@@ -81,6 +101,16 @@
 		WHERE id = #{id}
 		  AND farmer_id = #{farmerId}
 		  AND is_deleted = 0
+	</update>
+
+	<update id="decreaseProductStock">
+		UPDATE farmer_product
+		SET stock = stock - #{quantity},
+			updated_at = NOW()
+		WHERE id = #{productId}
+		  AND is_deleted = 0
+		  AND status = 'on_shelf'
+		  AND stock >= #{quantity}
 	</update>
 
 </mapper>

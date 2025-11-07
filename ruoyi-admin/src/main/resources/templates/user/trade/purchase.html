@@ -7,13 +7,379 @@
 <div class="wrapper wrapper-content animated fadeInRight">
   <div class="ibox">
     <div class="ibox-title">
-      <h5>购买商品</h5>
+        <div class="pull-right btn-group">
+          <button type="button" class="btn btn-primary btn-sm" id="btnShowProducts">商品列表</button>
+          <button type="button" class="btn btn-default btn-sm" id="btnShowOrders">订单列表</button>
+        </div>
+        <h5>购买商品</h5>
     </div>
     <div class="ibox-content">
-      <p>本页面用于展示平台商品信息和购买入口，您可以在此浏览商品并进行购买。</p>
+        <div id="productSection">
+          <div class="alert alert-info">
+            在下方列表中浏览可购买的商品，点击“查看”了解详情或直接“购买”。
+          </div>
+          <table class="table table-striped" id="productTable">
+            <thead>
+            <tr>
+              <th>农户ID</th>
+              <th>商品ID</th>
+              <th>商品名称</th>
+              <th>商品单价（元）</th>
+              <th>库存数量</th>
+              <th class="text-center">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td colspan="6" class="text-center text-muted">正在加载商品信息...</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="orderSection" style="display: none;">
+          <div class="alert alert-info">
+            这里显示已创建的订单，订单状态同步更新。待确认订单需等待农户接单，已确认订单可以点击“确认收货”完成交易。
+          </div>
+          <table class="table table-bordered" id="orderTable">
+            <thead>
+            <tr>
+              <th>订单ID</th>
+              <th>农户ID</th>
+              <th>商品ID</th>
+              <th>商品名称</th>
+              <th>购买数量</th>
+              <th>总价（元）</th>
+              <th>订单状态</th>
+              <th class="text-center">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td colspan="8" class="text-center text-muted">正在加载订单信息...</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
     </div>
   </div>
 </div>
+
+  <!-- 商品详情弹窗 -->
+  <div class="modal fade" id="productDetailModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">商品详情</h4>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>农户ID</label>
+            <p class="form-control-static" id="detailFarmerId"></p>
+          </div>
+          <div class="form-group">
+            <label>商品名称</label>
+            <p class="form-control-static" id="detailProductName"></p>
+          </div>
+          <div class="form-group">
+            <label>商品单价（元）</label>
+            <p class="form-control-static" id="detailProductPrice"></p>
+          </div>
+          <div class="form-group">
+            <label>库存数量</label>
+            <p class="form-control-static" id="detailProductStock"></p>
+          </div>
+          <div class="form-group">
+            <label>商品描述</label>
+            <p class="form-control-static" id="detailProductDescription"></p>
+          </div>
+          <div class="form-group">
+            <label>状态</label>
+            <p class="form-control-static" id="detailProductStatus"></p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下单弹窗 -->
+  <div class="modal fade" id="purchaseModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">创建订单</h4>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>商品名称</label>
+            <p class="form-control-static" id="purchaseProductName"></p>
+          </div>
+          <div class="form-group">
+            <label>当前库存</label>
+            <p class="form-control-static" id="purchaseProductStock"></p>
+          </div>
+          <div class="form-group">
+            <label for="purchaseQuantity">购买数量</label>
+            <input type="number" class="form-control" id="purchaseQuantity" min="1" value="1">
+            <span class="help-block text-muted">购买数量不能超过库存数量。</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-success" id="btnSubmitOrder">创建订单</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <th:block th:include="include :: footer" />
+
+  <script th:inline="javascript">
+    var ctx = [[@{/}]];
+    var tradeApiPrefix = ctx + "buyer/api/trade";
+    var currentProduct = null;
+
+    function escapeHtml(text) {
+      if (text === undefined || text === null) {
+        return '';
+      }
+      return $('<div/>').text(text).html();
+    }
+
+    function formatPrice(value) {
+      if (value === undefined || value === null) {
+        return '0.00';
+      }
+      return parseFloat(value).toFixed(2);
+    }
+
+    function formatStatus(status) {
+      switch (status) {
+        case 'pending':
+          return '待确认';
+        case 'confirmed':
+          return '已确认';
+        case 'completed':
+          return '已完成';
+        default:
+          return status || '-';
+      }
+    }
+
+    function toggleSection(showOrders) {
+      if (showOrders) {
+        $('#orderSection').show();
+        $('#productSection').hide();
+        $('#btnShowOrders').removeClass('btn-default').addClass('btn-primary');
+        $('#btnShowProducts').removeClass('btn-primary').addClass('btn-default');
+        loadOrders();
+      } else {
+        $('#productSection').show();
+        $('#orderSection').hide();
+        $('#btnShowProducts').removeClass('btn-default').addClass('btn-primary');
+        $('#btnShowOrders').removeClass('btn-primary').addClass('btn-default');
+        loadProducts();
+      }
+    }
+
+    function renderProducts(products) {
+      var tbody = $('#productTable tbody');
+      tbody.empty();
+      if (!products || products.length === 0) {
+        tbody.append('<tr><td colspan="6" class="text-center text-muted">暂无可购买的商品。</td></tr>');
+        return;
+      }
+      products.forEach(function (item) {
+        var row = $('<tr></tr>');
+        row.append('<td>' + escapeHtml(item.farmerId) + '</td>');
+        row.append('<td>' + escapeHtml(item.id) + '</td>');
+        row.append('<td>' + escapeHtml(item.name) + '</td>');
+        row.append('<td>' + formatPrice(item.price) + '</td>');
+        row.append('<td>' + escapeHtml(item.stock) + '</td>');
+
+        var actionHtml = '<div class="btn-group btn-group-xs">' +
+                '<button type="button" class="btn btn-info" data-action="view" data-id="' + item.id + '">查看</button>' +
+                '<button type="button" class="btn btn-success" data-action="buy" data-id="' + item.id + '"' +
+                (item.stock <= 0 ? ' disabled' : '') + '>购买</button>' +
+                '</div>';
+        row.append('<td class="text-center">' + actionHtml + '</td>');
+        row.data('product', item);
+        tbody.append(row);
+      });
+    }
+
+    function renderOrders(orders) {
+      var tbody = $('#orderTable tbody');
+      tbody.empty();
+      if (!orders || orders.length === 0) {
+        tbody.append('<tr><td colspan="8" class="text-center text-muted">暂无订单记录。</td></tr>');
+        return;
+      }
+      orders.forEach(function (item) {
+        var row = $('<tr></tr>');
+        row.append('<td>' + escapeHtml(item.id) + '</td>');
+        row.append('<td>' + escapeHtml(item.farmerId) + '</td>');
+        row.append('<td>' + escapeHtml(item.productId) + '</td>');
+        row.append('<td>' + escapeHtml(item.productName || '') + '</td>');
+        row.append('<td>' + escapeHtml(item.quantity) + '</td>');
+        row.append('<td>' + formatPrice(item.totalPrice) + '</td>');
+        row.append('<td>' + formatStatus(item.status) + '</td>');
+
+        var actionBtn = '';
+        if (item.status === 'confirmed') {
+          actionBtn = '<button type="button" class="btn btn-success btn-xs" data-action="complete" data-id="' + item.id + '">确认收货</button>';
+        } else if (item.status === 'completed') {
+          actionBtn = '<span class="text-success">已完成</span>';
+        } else {
+          actionBtn = '<span class="text-muted">等待农户确认</span>';
+        }
+        row.append('<td class="text-center">' + actionBtn + '</td>');
+        tbody.append(row);
+      });
+    }
+
+    function loadProducts() {
+      $('#productTable tbody').html('<tr><td colspan="6" class="text-center text-muted">正在加载商品信息...</td></tr>');
+      $.get(tradeApiPrefix + "/products", function (res) {
+        if (res.code === 0) {
+          renderProducts(res.data || []);
+        } else {
+          $('#productTable tbody').html('<tr><td colspan="6" class="text-center text-danger">' + escapeHtml(res.msg || '加载失败') + '</td></tr>');
+        }
+      }).fail(function () {
+        $('#productTable tbody').html('<tr><td colspan="6" class="text-center text-danger">加载商品信息失败，请稍后重试。</td></tr>');
+      });
+    }
+
+    function loadOrders() {
+      $('#orderTable tbody').html('<tr><td colspan="8" class="text-center text-muted">正在加载订单信息...</td></tr>');
+      $.get(tradeApiPrefix + "/orders", function (res) {
+        if (res.code === 0) {
+          renderOrders(res.data || []);
+        } else {
+          $('#orderTable tbody').html('<tr><td colspan="8" class="text-center text-danger">' + escapeHtml(res.msg || '加载失败') + '</td></tr>');
+        }
+      }).fail(function () {
+        $('#orderTable tbody').html('<tr><td colspan="8" class="text-center text-danger">加载订单信息失败，请稍后重试。</td></tr>');
+      });
+    }
+
+    function showProductDetail(product) {
+      $('#detailFarmerId').text(product.farmerId || '-');
+      $('#detailProductName').text(product.name || '-');
+      $('#detailProductPrice').text(formatPrice(product.price));
+      $('#detailProductStock').text(product.stock != null ? product.stock : '-');
+      $('#detailProductDescription').text(product.description ? product.description : '无');
+      $('#detailProductStatus').text(product.status === 'on_shelf' ? '上架' : '下架');
+      $('#productDetailModal').modal('show');
+    }
+
+    function openPurchaseModal(product) {
+      currentProduct = product;
+      $('#purchaseProductName').text(product.name || '-');
+      $('#purchaseProductStock').text(product.stock != null ? product.stock : '-');
+      $('#purchaseQuantity').val(1);
+      $('#purchaseModal').modal('show');
+    }
+
+    function submitOrder() {
+      if (!currentProduct) {
+        layer.msg('请选择要购买的商品');
+        return;
+      }
+      var quantity = parseInt($('#purchaseQuantity').val(), 10);
+      if (isNaN(quantity) || quantity <= 0) {
+        layer.msg('请输入正确的购买数量');
+        return;
+      }
+      if (quantity > currentProduct.stock) {
+        layer.msg('购买数量不能超过库存数量');
+        return;
+      }
+      var requestData = {
+        productId: currentProduct.id,
+        quantity: quantity
+      };
+      $.ajax({
+        url: tradeApiPrefix + "/orders",
+        type: "POST",
+        data: JSON.stringify(requestData),
+        contentType: "application/json",
+        success: function (res) {
+          if (res.code === 0) {
+            layer.msg(res.msg || '创建订单成功', { icon: 1 });
+            $('#purchaseModal').modal('hide');
+            loadProducts();
+            loadOrders();
+          } else {
+            layer.msg(res.msg || '创建订单失败', { icon: 5 });
+          }
+        },
+        error: function () {
+          layer.msg('创建订单失败，请稍后重试', { icon: 5 });
+        }
+      });
+    }
+
+    function completeOrder(orderId) {
+      layer.confirm('确认已经收到商品吗？', function (index) {
+        $.ajax({
+          url: tradeApiPrefix + "/orders/" + orderId + "/complete",
+          type: "PUT",
+          success: function (res) {
+            if (res.code === 0) {
+              layer.msg(res.msg || '确认成功', { icon: 1 });
+              loadOrders();
+            } else {
+              layer.msg(res.msg || '操作失败', { icon: 5 });
+            }
+          },
+          error: function () {
+            layer.msg('操作失败，请稍后重试', { icon: 5 });
+          }
+        });
+        layer.close(index);
+      });
+    }
+
+    $(function () {
+      toggleSection(false);
+
+      $('#btnShowProducts').on('click', function () {
+        toggleSection(false);
+      });
+      $('#btnShowOrders').on('click', function () {
+        toggleSection(true);
+      });
+
+      $('#productTable').on('click', 'button[data-action="view"]', function () {
+        var product = $(this).closest('tr').data('product');
+        if (product) {
+          showProductDetail(product);
+        }
+      });
+
+      $('#productTable').on('click', 'button[data-action="buy"]', function () {
+        var product = $(this).closest('tr').data('product');
+        if (product) {
+          openPurchaseModal(product);
+        }
+      });
+
+      $('#btnSubmitOrder').on('click', submitOrder);
+
+      $('#orderTable').on('click', 'button[data-action="complete"]', function () {
+        var orderId = $(this).data('id');
+        if (orderId) {
+          completeOrder(orderId);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
