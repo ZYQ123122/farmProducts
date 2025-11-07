@@ -15,6 +15,11 @@ public interface IFarmerProductService
     List<FarmerProduct> selectFarmerProductList(Long farmerId, String status);
 
     /**
+     * 查询所有上架商品（买家视角）
+     */
+    List<FarmerProduct> selectAvailableProducts();
+
+    /**
      * 新增商品
      */
     int insertFarmerProduct(FarmerProduct farmerProduct);
@@ -38,4 +43,14 @@ public interface IFarmerProductService
      * 根据ID查询指定商品（校验农户权限）
      */
     FarmerProduct selectFarmerProductById(Long id, Long farmerId);
+
+    /**
+     * 根据ID查询上架商品（买家视角）
+     */
+    FarmerProduct selectAvailableProductById(Long id);
+
+    /**
+     * 扣减库存
+     */
+    boolean decreaseProductStock(Long productId, int quantity);
 }
