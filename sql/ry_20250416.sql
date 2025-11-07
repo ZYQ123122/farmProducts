@@ -760,3 +760,23 @@ create table buyer_requirement (
                                    key idx_buyer_requirement_buyer (buyer_id),
                                    constraint fk_buyer_requirement_user foreign key (buyer_id) references sys_user (user_id)
 ) engine=innodb comment = '买家需求信息表';
+
+-- ----------------------------
+-- 23、订单表
+-- ----------------------------
+CREATE TABLE orders (
+                        id BIGINT NOT NULL AUTO_INCREMENT COMMENT '订单唯一标识',
+                        product_id BIGINT NOT NULL COMMENT '商品 ID',
+                        buyer_id BIGINT NOT NULL COMMENT '买家用户 ID',
+                        quantity INT NOT NULL COMMENT '购买数量',
+                        total_price DECIMAL(10,2) DEFAULT NULL COMMENT '总价',
+                        status ENUM('pending','confirmed','completed') DEFAULT 'pending' COMMENT '订单状态',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                        PRIMARY KEY (id),
+                        KEY idx_orders_product_id (product_id),
+                        KEY idx_orders_buyer_id (buyer_id),
+                        CONSTRAINT fk_orders_product
+                            FOREIGN KEY (product_id) REFERENCES farmer_product (id),
+                        CONSTRAINT fk_orders_buyer
+                            FOREIGN KEY (buyer_id) REFERENCES sys_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单表';

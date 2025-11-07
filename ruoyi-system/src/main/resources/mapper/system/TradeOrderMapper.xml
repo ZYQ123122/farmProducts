@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.TradeOrderMapper">
+
+	<resultMap id="TradeOrderResult" type="com.ruoyi.system.domain.TradeOrder">
+		<id property="id" column="id" />
+		<result property="productId" column="product_id" />
+		<result property="buyerId" column="buyer_id" />
+		<result property="quantity" column="quantity" />
+		<result property="totalPrice" column="total_price" />
+		<result property="status" column="status" />
+		<result property="createdAt" column="created_at" />
+		<result property="farmerId" column="farmer_id" />
+		<result property="productName" column="product_name" />
+		<result property="productPrice" column="product_price" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		id, product_id, buyer_id, quantity, total_price, status, created_at
+	</sql>
+
+	<insert id="insertOrder" parameterType="com.ruoyi.system.domain.TradeOrder" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO orders
+			(product_id, buyer_id, quantity, total_price, status, created_at)
+		VALUES
+			(#{productId}, #{buyerId}, #{quantity}, #{totalPrice}, #{status}, NOW())
+	</insert>
+
+	<select id="selectOrderById" resultMap="TradeOrderResult">
+		SELECT
+			o.id,
+			o.product_id,
+			o.buyer_id,
+			o.quantity,
+			o.total_price,
+			o.status,
+			o.created_at,
+			fp.farmer_id,
+			fp.name AS product_name,
+			fp.price AS product_price
+		FROM orders o
+				 LEFT JOIN farmer_product fp ON o.product_id = fp.id
+		WHERE o.id = #{id}
+			LIMIT 1
+	</select>
+
+	<select id="selectOrdersByBuyer" resultMap="TradeOrderResult">
+		SELECT
+			o.id,
+			o.product_id,
+			o.buyer_id,
+			o.quantity,
+			o.total_price,
+			o.status,
+			o.created_at,
+			fp.farmer_id,
+			fp.name AS product_name,
+			fp.price AS product_price
+		FROM orders o
+				 LEFT JOIN farmer_product fp ON o.product_id = fp.id
+		WHERE o.buyer_id = #{buyerId}
+		ORDER BY o.created_at DESC
+	</select>
+
+	<select id="selectOrdersByFarmer" resultMap="TradeOrderResult">
+		SELECT
+			o.id,
+			o.product_id,
+			o.buyer_id,
+			o.quantity,
+			o.total_price,
+			o.status,
+			o.created_at,
+			fp.farmer_id,
+			fp.name AS product_name,
+			fp.price AS product_price
+		FROM orders o
+				 INNER JOIN farmer_product fp ON o.product_id = fp.id
+		WHERE fp.farmer_id = #{farmerId}
+		ORDER BY o.created_at DESC
+	</select>
+
+	<update id="updateOrderStatus">
+		UPDATE orders
+		SET status = #{toStatus}
+		WHERE id = #{id}
+		  AND status = #{fromStatus}
+	</update>
+
+</mapper>

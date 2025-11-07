@@ -18,9 +18,19 @@ public interface FarmerProductMapper
                                                 @Param("status") String status);
 
     /**
+     * 查询所有上架商品（提供给买家使用）
+     */
+    List<FarmerProduct> selectAvailableProductList();
+
+    /**
      * 根据ID和农户查询商品
      */
     FarmerProduct selectFarmerProductById(@Param("id") Long id, @Param("farmerId") Long farmerId);
+
+    /**
+     * 查询上架状态的商品（提供给买家使用）
+     */
+    FarmerProduct selectAvailableProductById(@Param("id") Long id);
 
     /**
      * 新增商品
@@ -42,5 +52,10 @@ public interface FarmerProductMapper
      */
     int changeProductStatus(@Param("id") Long id, @Param("farmerId") Long farmerId,
                             @Param("status") String status);
+
+    /**
+     * 扣减库存（下单时使用）
+     */
+    int decreaseProductStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
 }
 
