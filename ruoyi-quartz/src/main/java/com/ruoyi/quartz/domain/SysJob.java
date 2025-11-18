@@ -1,6 +1,5 @@
 package com.ruoyi.quartz.domain;
 
-import java.io.Serializable;
 import java.util.Date;
 import javax.validation.constraints.*;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -17,7 +16,7 @@ import com.ruoyi.quartz.util.CronUtils;
  * 
  * @author ruoyi
  */
-public class SysJob extends BaseEntity implements Serializable
+public class SysJob extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
