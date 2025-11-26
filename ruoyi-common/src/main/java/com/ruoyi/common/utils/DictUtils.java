@@ -1,9 +1,10 @@
 package com.ruoyi.common.utils;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.constant.Constants;
-import com.ruoyi.common.core.domain.entity.SysDictData;
+// import com.ruoyi.common.core.domain.entity.SysDictData; // 已删除
 
 /**
  * 字典工具类
@@ -24,9 +25,10 @@ public class DictUtils
      * @param key 参数键
      * @param dictDatas 字典数据列表
      */
-    public static void setDictCache(String key, List<SysDictData> dictDatas)
+    public static void setDictCache(String key, List<?> dictDatas)
     {
-        CacheUtils.put(getCacheName(), getCacheKey(key), dictDatas);
+        // 简化：不再使用字典表
+        // CacheUtils.put(getCacheName(), getCacheKey(key), dictDatas);
     }
 
     /**
@@ -35,14 +37,10 @@ public class DictUtils
      * @param key 参数键
      * @return dictDatas 字典数据列表
      */
-    public static List<SysDictData> getDictCache(String key)
+    public static List<?> getDictCache(String key)
     {
-        Object cacheObj = CacheUtils.get(getCacheName(), getCacheKey(key));
-        if (StringUtils.isNotNull(cacheObj))
-        {
-            return StringUtils.cast(cacheObj);
-        }
-        return null;
+        // 简化：不再使用字典表，返回空列表
+        return new ArrayList<>();
     }
 
     /**
@@ -87,37 +85,8 @@ public class DictUtils
      */
     public static String getDictLabel(String dictType, String dictValue, String separator)
     {
-        StringBuilder propertyString = new StringBuilder();
-        List<SysDictData> datas = getDictCache(dictType);
-        if (StringUtils.isNull(datas))
-        {
-            return StringUtils.EMPTY;
-        }
-        if (StringUtils.containsAny(dictValue, separator))
-        {
-            for (SysDictData dict : datas)
-            {
-                for (String value : dictValue.split(separator))
-                {
-                    if (value.equals(dict.getDictValue()))
-                    {
-                        propertyString.append(dict.getDictLabel()).append(separator);
-                        break;
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (SysDictData dict : datas)
-            {
-                if (dictValue.equals(dict.getDictValue()))
-                {
-                    return dict.getDictLabel();
-                }
-            }
-        }
-        return StringUtils.stripEnd(propertyString.toString(), separator);
+        // 简化：不再使用字典表，直接返回原值
+        return dictValue;
     }
 
     /**
@@ -130,37 +99,8 @@ public class DictUtils
      */
     public static String getDictValue(String dictType, String dictLabel, String separator)
     {
-        StringBuilder propertyString = new StringBuilder();
-        List<SysDictData> datas = getDictCache(dictType);
-        if (StringUtils.isNull(datas))
-        {
-            return StringUtils.EMPTY;
-        }
-        if (StringUtils.containsAny(dictLabel, separator))
-        {
-            for (SysDictData dict : datas)
-            {
-                for (String label : dictLabel.split(separator))
-                {
-                    if (label.equals(dict.getDictLabel()))
-                    {
-                        propertyString.append(dict.getDictValue()).append(separator);
-                        break;
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (SysDictData dict : datas)
-            {
-                if (dictLabel.equals(dict.getDictLabel()))
-                {
-                    return dict.getDictValue();
-                }
-            }
-        }
-        return StringUtils.stripEnd(propertyString.toString(), separator);
+        // 简化：不再使用字典表，直接返回原值
+        return dictLabel;
     }
 
     /**
@@ -171,17 +111,8 @@ public class DictUtils
      */
     public static String getDictValues(String dictType)
     {
-        StringBuilder propertyString = new StringBuilder();
-        List<SysDictData> datas = getDictCache(dictType);
-        if (StringUtils.isNull(datas))
-        {
-            return StringUtils.EMPTY;
-        }
-        for (SysDictData dict : datas)
-        {
-            propertyString.append(dict.getDictValue()).append(SEPARATOR);
-        }
-        return StringUtils.stripEnd(propertyString.toString(), SEPARATOR);
+        // 简化：不再使用字典表，返回空字符串
+        return StringUtils.EMPTY;
     }
 
     /**
@@ -192,17 +123,8 @@ public class DictUtils
      */
     public static String getDictLabels(String dictType)
     {
-        StringBuilder propertyString = new StringBuilder();
-        List<SysDictData> datas = getDictCache(dictType);
-        if (StringUtils.isNull(datas))
-        {
-            return StringUtils.EMPTY;
-        }
-        for (SysDictData dict : datas)
-        {
-            propertyString.append(dict.getDictLabel()).append(SEPARATOR);
-        }
-        return StringUtils.stripEnd(propertyString.toString(), SEPARATOR);
+        // 简化：不再使用字典表，返回空字符串
+        return StringUtils.EMPTY;
     }
 
     /**

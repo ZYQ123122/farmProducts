@@ -14,6 +14,13 @@
   <link th:href="@{/css/style.min.css}" rel="stylesheet" />
   <link th:href="@{/css/skins.css}" rel="stylesheet" />
   <link th:href="@{/ruoyi/css/ry-ui.css?v=4.8.1}" rel="stylesheet" />
+  <!-- 修复 text-size-adjust 兼容性问题 -->
+  <style>
+    html {
+      -ms-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+  </style>
 </head>
 <body class="fixed-sidebar full-height-layout gray-bg" th:classappend="${isMobile} ? 'canvas-menu'" style="overflow: hidden">
 <div id="wrapper">
@@ -35,13 +42,13 @@
             <a class="menuItem noactive" title="个人中心" th:href="@{/system/user/profile}">
               <div class="hide" th:text="个人中心"></div>
               <div class="pull-left image">
-                <img th:src="(${#strings.isEmpty(user.avatar)}) ? @{/img/profile.jpg} : @{${user.avatar}}" th:onerror="this.src='img/profile.jpg'" class="img-circle" alt="User Image">
+                <img th:src="@{/img/profile.jpg}" th:onerror="this.src='img/profile.jpg'" class="img-circle" alt="User Image">
               </div>
             </a>
             <div class="pull-left info">
-              <p>[[${user.loginName}]]</p>
+              <p>[[${user.username}]]</p>
               <a href="javascript:;"><i class="fa fa-circle text-success"></i> 在线</a>
-              <a th:href="@{logout}" style="padding-left:5px;"><i class="fa fa-sign-out text-danger"></i> 注销</a>
+              <a href="javascript:void(0);" onclick="logout()" style="padding-left:5px;"><i class="fa fa-sign-out text-danger"></i> 注销</a>
             </div>
           </div>
         </li>
@@ -96,8 +103,8 @@
           <li><a data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="全屏显示" href="javascript:;" id="fullScreen"><i class="fa fa-arrows-alt"></i> 全屏</a></li>
           <li class="dropdown user-menu">
             <a href="javascript:void(0)" class="dropdown-toggle" data-hover="dropdown">
-              <img th:src="(${#strings.isEmpty(user.avatar)}) ? @{/img/profile.jpg} : @{${user.avatar}}" th:onerror="this.src='img/profile.jpg'" class="user-image">
-              <span class="hidden-xs">[[${#strings.defaultString(user.userName, '-')}]]</span>
+              <img th:src="@{/img/profile.jpg}" th:onerror="this.src='img/profile.jpg'" class="user-image">
+              <span class="hidden-xs">[[${#strings.defaultString(user.name, '-')}]]</span>
             </a>
             <ul class="dropdown-menu">
               <li class="mt5">
@@ -118,7 +125,7 @@
               </li>
               <li class="divider"></li>
               <li>
-                <a th:href="@{logout}">
+                <a href="javascript:void(0);" onclick="logout()">
                   <i class="fa fa-sign-out"></i> 退出登录</a>
               </li>
             </ul>
@@ -269,6 +276,15 @@
     }
     $("[data-toggle='tooltip']").tooltip();
   });
+
+  function logout() {
+    // 在父窗口跳转到登录页面
+    if (window.top != window.self) {
+      window.top.location.href = ctx + 'logout';
+    } else {
+      window.location.href = ctx + 'logout';
+    }
+  }
 </script>
 </body>
 </html>

@@ -216,7 +216,12 @@ public class BaseController
      */
     public Long getUserId()
     {
-        return getSysUser().getUserId();
+        SysUser user = getSysUser();
+        if (user != null)
+        {
+            return user.getId() != null ? user.getId() : null;
+        }
+        return null;
     }
 
     /**
@@ -224,6 +229,11 @@ public class BaseController
      */
     public String getLoginName()
     {
-        return getSysUser().getLoginName();
+        SysUser user = getSysUser();
+        if (user != null)
+        {
+            return user.getUsername();
+        }
+        return null;
     }
 }

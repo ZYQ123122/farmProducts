@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
-import java.util.Date;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -54,10 +52,10 @@ class FarmerControllerTest
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         testUser = new SysUser();
-        testUser.setUserId(1L);
-        testUser.setUserName("测试农户");
-        testUser.setLoginName("test_farmer");
-        testUser.setPwdUpdateDate(new Date());
+        testUser.setId(1L);
+        testUser.setName("测试农户");
+        testUser.setUsername("test_farmer");
+        // 新表结构：不再有pwdUpdateDate字段
 
         new RuoYiConfig().setVersion("1.0.0");
     }

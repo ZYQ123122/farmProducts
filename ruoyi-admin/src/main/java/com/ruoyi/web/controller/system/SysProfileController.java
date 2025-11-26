@@ -17,10 +17,8 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.common.utils.ShiroUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
-import com.ruoyi.common.utils.file.FileUtils;
 import com.ruoyi.common.utils.file.MimeTypeUtils;
 import com.ruoyi.framework.shiro.service.SysPasswordService;
 import com.ruoyi.system.service.ISysUserService;
@@ -52,8 +50,9 @@ public class SysProfileController extends BaseController
     {
         SysUser user = getSysUser();
         mmap.put("user", user);
-        mmap.put("roleGroup", userService.selectUserRoleGroup(user.getUserId()));
-        mmap.put("postGroup", userService.selectUserPostGroup(user.getUserId()));
+        // 新表结构：不再有角色组和岗位组
+        mmap.put("roleGroup", user.getRole() != null ? user.getRole() : "");
+        mmap.put("postGroup", "");
         return prefix + "/profile";
     }
 
@@ -87,8 +86,9 @@ public class SysProfileController extends BaseController
         {
             return error("新密码不能与旧密码相同");
         }
-        user.setSalt(ShiroUtils.randomSalt());
-        user.setPassword(passwordService.encryptPassword(user.getLoginName(), newPassword, user.getSalt()));
+        // 新表结构：不再使用salt，直接加密密码
+        String encryptedPassword = passwordService.encryptPassword(user.getUsername(), newPassword, "");
+        user.setPasswordHash(encryptedPassword);
         if (userService.resetUserPwd(user) > 0)
         {
             setSysUser(userService.selectUserById(user.getUserId()));
@@ -128,10 +128,10 @@ public class SysProfileController extends BaseController
     public AjaxResult update(SysUser user)
     {
         SysUser currentUser = getSysUser();
-        currentUser.setUserName(user.getUserName());
+        currentUser.setName(user.getName());
         currentUser.setEmail(user.getEmail());
-        currentUser.setPhonenumber(user.getPhonenumber());
-        currentUser.setSex(user.getSex());
+        currentUser.setPhone(user.getPhone());
+        // 新表结构：不再有sex字段
         if (StringUtils.isNotEmpty(user.getPhonenumber()) && !userService.checkPhoneUnique(currentUser))
         {
             return error("修改用户'" + currentUser.getLoginName() + "'失败，手机号码已存在");
@@ -164,12 +164,13 @@ public class SysProfileController extends BaseController
                 String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION, true);
                 if (userService.updateUserAvatar(currentUser.getUserId(), avatar))
                 {
-                    String oldAvatar = currentUser.getAvatar();
-                    if (StringUtils.isNotEmpty(oldAvatar))
-                    {
-                        FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
-                    }
-                    currentUser.setAvatar(avatar);
+                // 新表结构：不再有avatar字段，但保留上传功能用于其他用途
+                // String oldAvatar = currentUser.getAvatar();
+                // if (StringUtils.isNotEmpty(oldAvatar))
+                // {
+                //     FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
+                // }
+                // currentUser.setAvatar(avatar);
                     setSysUser(currentUser);
                     return success();
                 }

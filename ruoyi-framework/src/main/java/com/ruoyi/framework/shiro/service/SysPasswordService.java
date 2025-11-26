@@ -41,7 +41,7 @@ public class SysPasswordService
 
     public void validate(SysUser user, String password)
     {
-        String loginName = user.getLoginName();
+        String loginName = user.getUsername();
 
         AtomicInteger retryCount = loginRecordCache.get(loginName);
 
@@ -70,7 +70,10 @@ public class SysPasswordService
 
     public boolean matches(SysUser user, String newPassword)
     {
-        return user.getPassword().equals(encryptPassword(user.getLoginName(), newPassword, user.getSalt()));
+        // 新表结构：直接比较password_hash
+        // 使用MD5加密：username + password
+        String encryptedPassword = encryptPassword(user.getUsername(), newPassword, "");
+        return user.getPasswordHash() != null && user.getPasswordHash().equals(encryptedPassword);
     }
 
     public void clearLoginRecordCache(String loginName)
@@ -80,6 +83,7 @@ public class SysPasswordService
 
     public String encryptPassword(String loginName, String password, String salt)
     {
-        return new Md5Hash(loginName + password + salt).toHex();
+        // 新表结构：使用MD5加密 username + password
+        return new Md5Hash(loginName + password).toHex();
     }
 }
