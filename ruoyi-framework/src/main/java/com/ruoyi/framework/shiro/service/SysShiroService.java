@@ -2,24 +2,17 @@ package com.ruoyi.framework.shiro.service;
 
 import java.io.Serializable;
 import org.apache.shiro.session.Session;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.shiro.session.OnlineSession;
-import com.ruoyi.system.domain.SysUserOnline;
-import com.ruoyi.system.service.ISysUserOnlineService;
 
 /**
- * 会话db操作处理
+ * 会话db操作处理（简化版本）
  * 
  * @author ruoyi
  */
 @Component
 public class SysShiroService
 {
-    @Autowired
-    private ISysUserOnlineService onlineService;
-
     /**
      * 删除会话
      *
@@ -27,7 +20,7 @@ public class SysShiroService
      */
     public void deleteSession(OnlineSession onlineSession)
     {
-        onlineService.deleteOnlineById(String.valueOf(onlineSession.getId()));
+        // 简化：不再使用在线用户服务
     }
 
     /**
@@ -38,25 +31,13 @@ public class SysShiroService
      */
     public Session getSession(Serializable sessionId)
     {
-        SysUserOnline userOnline = onlineService.selectOnlineById(String.valueOf(sessionId));
-        return StringUtils.isNull(userOnline) ? null : createSession(userOnline);
+        // 简化：返回null，不再使用在线用户服务
+        return null;
     }
 
-    public Session createSession(SysUserOnline userOnline)
+    public Session createSession(Object userOnline)
     {
-        OnlineSession onlineSession = new OnlineSession();
-        if (StringUtils.isNotNull(userOnline))
-        {
-            onlineSession.setId(userOnline.getSessionId());
-            onlineSession.setHost(userOnline.getIpaddr());
-            onlineSession.setBrowser(userOnline.getBrowser());
-            onlineSession.setOs(userOnline.getOs());
-            onlineSession.setDeptName(userOnline.getDeptName());
-            onlineSession.setLoginName(userOnline.getLoginName());
-            onlineSession.setStartTimestamp(userOnline.getStartTimestamp());
-            onlineSession.setLastAccessTime(userOnline.getLastAccessTime());
-            onlineSession.setTimeout(userOnline.getExpireTime());
-        }
-        return onlineSession;
+        // 简化：返回空会话
+        return new OnlineSession();
     }
 }

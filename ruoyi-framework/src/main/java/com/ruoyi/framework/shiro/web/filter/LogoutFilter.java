@@ -11,10 +11,8 @@ import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.MessageUtils;
 import com.ruoyi.common.utils.ShiroUtils;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.framework.manager.factory.AsyncFactory;
-import com.ruoyi.system.service.ISysUserOnlineService;
 
 /**
  * 退出过滤器
@@ -55,8 +53,8 @@ public class LogoutFilter extends org.apache.shiro.web.filter.authc.LogoutFilter
                     String loginName = user.getLoginName();
                     // 记录用户退出日志
                     AsyncManager.me().execute(AsyncFactory.recordLogininfor(loginName, Constants.LOGOUT, MessageUtils.message("user.logout.success")));
-                    // 清理缓存
-                    SpringUtils.getBean(ISysUserOnlineService.class).removeUserCache(loginName, ShiroUtils.getSessionId());
+                    // 简化：不再使用在线用户服务清理缓存
+                    // SpringUtils.getBean(ISysUserOnlineService.class).removeUserCache(loginName, ShiroUtils.getSessionId());
                 }
                 // 退出登录
                 subject.logout();

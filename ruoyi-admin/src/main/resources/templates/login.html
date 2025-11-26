@@ -15,7 +15,66 @@
     <!-- 避免IE使用兼容模式 -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <link rel="shortcut icon" href="../static/favicon.ico" th:href="@{favicon.ico}"/>
-    <style type="text/css">label.error { position:inherit;  }</style>
+    <!-- 修复 text-size-adjust 兼容性问题 -->
+    <style type="text/css">
+        html {
+            -ms-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+        label.error { position:inherit;  }
+        /* 放大欢迎文字区域 */
+        .signin-info {
+            padding-left: 0 !important;
+            margin-left: -40px !important;
+        }
+        .signin-info h4 {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+        }
+        .signin-info h4 strong {
+            font-size: 36px;
+            color: #fff;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+        }
+        .signin-info ul {
+            font-size: 18px;
+            line-height: 2.2;
+            margin: 30px 0;
+            padding-left: 30px !important;
+            margin-left: 0 !important;
+            list-style: none;
+        }
+        .signin-info ul li {
+            margin-bottom: 12px;
+            padding-left: 0 !important;
+        }
+        .signin-info ul li i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        .signin-info > strong {
+            font-size: 18px;
+            margin-top: 30px;
+            display: block;
+            padding-left: 30px !important;
+            margin-left: 0 !important;
+        }
+        .signin-info > strong a {
+            font-size: 18px;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        /* 调整左侧列布局 */
+        .col-sm-7 {
+            padding-left: 5px !important;
+            padding-right: 20px;
+        }
+    </style>
     <script>
         if(window.top!==window.self){alert('未登录或登录超时。请重新登录');window.top.location=window.location};
     </script>
@@ -25,10 +84,6 @@
     <div class="row">
         <div class="col-sm-7">
             <div class="signin-info">
-                <div class="logopanel m-b">
-                    <h1><img alt="[ 若依 ]" src="../static/ruoyi.png" th:src="@{/ruoyi.png}"></h1>
-                </div>
-                <div class="m-b"></div>
                 <h4>欢迎使用 <strong>农销一体后台管理系统</strong></h4>
                 <ul class="m-b">
                     <li><i class="fa fa-arrow-circle-o-right m-r-xs"></i> SpringBoot</li>
@@ -73,7 +128,6 @@
     </div>
     <div class="signup-footer">
         <div class="pull-left">
-            Copyright © 2018-2025 ruoyi.vip All Rights Reserved. <br>
         </div>
     </div>
 </div>

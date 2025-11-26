@@ -23,9 +23,9 @@
 
 	<insert id="insertOrder" parameterType="com.ruoyi.system.domain.TradeOrder" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO orders
-			(product_id, buyer_id, quantity, total_price, status, created_at)
+			(product_id, buyer_id, farmer_id, quantity, total_price, status, created_at)
 		VALUES
-			(#{productId}, #{buyerId}, #{quantity}, #{totalPrice}, #{status}, NOW())
+			(#{productId}, #{buyerId}, #{farmerId}, #{quantity}, #{totalPrice}, #{status}, NOW())
 	</insert>
 
 	<select id="selectOrderById" resultMap="TradeOrderResult">

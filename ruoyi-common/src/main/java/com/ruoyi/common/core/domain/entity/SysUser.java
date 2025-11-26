@@ -1,17 +1,15 @@
 package com.ruoyi.common.core.domain.entity;
 
 import java.util.Date;
-import java.util.List;
 import javax.validation.constraints.*;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.annotation.Excel.ColumnType;
 import com.ruoyi.common.annotation.Excel.Type;
-import com.ruoyi.common.annotation.Excels;
 import com.ruoyi.common.core.domain.BaseEntity;
-import com.ruoyi.common.xss.Xss;
 
 /**
  * 用户对象 sys_user
@@ -24,185 +22,185 @@ public class SysUser extends BaseEntity
 
     /** 用户ID */
     @Excel(name = "用户序号", type = Type.EXPORT, cellType = ColumnType.NUMERIC, prompt = "用户编号")
-    private Long userId;
+    private Long id;
 
-    /** 部门ID */
-    @Excel(name = "部门编号", type = Type.IMPORT)
-    private Long deptId;
+    /** 用户名（手机号或邮箱） */
+    @Excel(name = "用户名")
+    @NotBlank(message = "用户名不能为空")
+    @Size(min = 0, max = 50, message = "用户名长度不能超过50个字符")
+    private String username;
 
-    /** 部门父ID */
-    private Long parentId;
+    /** 密码哈希值 */
+    @JsonIgnore
+    @NotBlank(message = "密码不能为空")
+    private String passwordHash;
 
-    /** 角色ID */
-    private Long roleId;
+    /** 用户角色（农户/专家/银行/买家/管理员） */
+    @Excel(name = "用户角色", readConverterExp = "farmer=农户,expert=专家,bank=银行,buyer=买家,admin=管理员")
+    @NotBlank(message = "用户角色不能为空")
+    private String role;
 
-    /** 登录名称 */
-    @Excel(name = "登录名称")
-    private String loginName;
+    /** 用户姓名 */
+    @Excel(name = "用户姓名")
+    @Size(min = 0, max = 100, message = "用户姓名长度不能超过100个字符")
+    private String name;
 
-    /** 用户名称 */
-    @Excel(name = "用户名称")
-    private String userName;
+    /** 联系方式 */
+    @Excel(name = "联系方式")
+    @Size(min = 0, max = 100, message = "联系方式长度不能超过100个字符")
+    private String contact;
 
-    /**
-     * 用户类型
-     * 00=系统用户, 01=注册用户, 02=农户, 03=专家, 04=银行, 05=买家
-     */
-    @Excel(name = "用户身份", readConverterExp = "00=系统用户,01=注册用户,02=农户,03=专家,04=银行,05=买家")
-    @NotBlank(message = "用户身份不能为空")
-    private String userType;
-
-    /** 用户邮箱 */
+    /** 邮箱（可选） */
     @Excel(name = "用户邮箱")
+    @Email(message = "邮箱格式不正确")
+    @Size(min = 0, max = 100, message = "邮箱长度不能超过100个字符")
     private String email;
 
-    /** 手机号码 */
+    /** 手机号（可选） */
     @Excel(name = "手机号码", cellType = ColumnType.TEXT)
-    private String phonenumber;
+    @Size(min = 0, max = 20, message = "手机号长度不能超过20个字符")
+    private String phone;
 
-    /** 用户性别 */
-    @Excel(name = "用户性别", readConverterExp = "0=男,1=女,2=未知")
-    private String sex;
+    /** 是否通过资质验证（0:未通过,1:已通过） */
+    @Excel(name = "是否验证", readConverterExp = "0=未通过,1=已通过")
+    private Integer isVerified;
 
-    /** 用户头像 */
-    private String avatar;
+    /** 创建时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "创建时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss", type = Type.EXPORT)
+    private Date createdAt;
 
-    /** 密码 */
-    private String password;
-
-    /** 盐加密 */
-    private String salt;
-
-    /** 账号状态（0正常 1停用） */
-    @Excel(name = "账号状态", readConverterExp = "0=正常,1=停用")
-    private String status;
-
-    /** 删除标志（0代表存在 2代表删除） */
-    private String delFlag;
-
-    /** 最后登录IP */
-    @Excel(name = "最后登录IP", type = Type.EXPORT)
-    private String loginIp;
-
-    /** 最后登录时间 */
-    @Excel(name = "最后登录时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss", type = Type.EXPORT)
-    private Date loginDate;
-
-    /** 密码最后更新时间 */
-    private Date pwdUpdateDate;
-
-    /** 部门对象 */
-    @Excels({
-            @Excel(name = "部门名称", targetAttr = "deptName", type = Type.EXPORT),
-            @Excel(name = "部门负责人", targetAttr = "leader", type = Type.EXPORT)
-    })
-    private SysDept dept;
-
-    private List<SysRole> roles;
-
-    /** 角色组 */
-    private Long[] roleIds;
-
-    /** 岗位组 */
-    private Long[] postIds;
+    /** 更新时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "更新时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss", type = Type.EXPORT)
+    private Date updatedAt;
 
     public SysUser()
     {
-
     }
 
-    public SysUser(Long userId)
+    public SysUser(Long id)
     {
-        this.userId = userId;
+        this.id = id;
     }
 
+    public Long getId()
+    {
+        return id;
+    }
+
+    public void setId(Long id)
+    {
+        this.id = id;
+    }
+
+    // 为了兼容旧代码，保留getUserId和setUserId方法
     public Long getUserId()
     {
-        return userId;
+        return id;
     }
 
     public void setUserId(Long userId)
     {
-        this.userId = userId;
+        this.id = userId;
     }
 
-    public boolean isAdmin()
+    public String getUsername()
     {
-        return isAdmin(this.userId);
+        return username;
     }
 
-    public static boolean isAdmin(Long userId)
+    public void setUsername(String username)
     {
-        return userId != null && 1L == userId;
+        this.username = username;
     }
 
-    public Long getDeptId()
-    {
-        return deptId;
-    }
-
-    public void setDeptId(Long deptId)
-    {
-        this.deptId = deptId;
-    }
-
-    public Long getParentId()
-    {
-        return parentId;
-    }
-
-    public void setParentId(Long parentId)
-    {
-        this.parentId = parentId;
-    }
-
-    public Long getRoleId()
-    {
-        return roleId;
-    }
-
-    public void setRoleId(Long roleId)
-    {
-        this.roleId = roleId;
-    }
-
-    @Xss(message = "登录账号不能包含脚本字符")
-    @NotBlank(message = "登录账号不能为空")
-    @Size(min = 0, max = 30, message = "登录账号长度不能超过30个字符")
+    // 为了兼容旧代码，保留getLoginName和setLoginName方法
     public String getLoginName()
     {
-        return loginName;
+        return username;
     }
 
     public void setLoginName(String loginName)
     {
-        this.loginName = loginName;
+        this.username = loginName;
     }
 
-    @Xss(message = "用户昵称不能包含脚本字符")
-    @Size(min = 0, max = 30, message = "用户昵称长度不能超过30个字符")
-    public String getUserName()
+    @JsonIgnore
+    public String getPasswordHash()
     {
-        return userName;
+        return passwordHash;
     }
 
-    public void setUserName(String userName)
+    public void setPasswordHash(String passwordHash)
     {
-        this.userName = userName;
+        this.passwordHash = passwordHash;
     }
 
+    // 为了兼容旧代码，保留getPassword和setPassword方法
+    @JsonIgnore
+    public String getPassword()
+    {
+        return passwordHash;
+    }
+
+    public void setPassword(String password)
+    {
+        this.passwordHash = password;
+    }
+
+    public String getRole()
+    {
+        return role;
+    }
+
+    public void setRole(String role)
+    {
+        this.role = role;
+    }
+
+    // 为了兼容旧代码，保留getUserType和setUserType方法
     public String getUserType()
     {
-        return userType;
+        return role;
     }
 
     public void setUserType(String userType)
     {
-        this.userType = userType;
+        this.role = userType;
     }
 
-    @Email(message = "邮箱格式不正确")
-    @Size(min = 0, max = 50, message = "邮箱长度不能超过50个字符")
+    public String getName()
+    {
+        return name;
+    }
+
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    // 为了兼容旧代码，保留getUserName和setUserName方法
+    public String getUserName()
+    {
+        return name;
+    }
+
+    public void setUserName(String userName)
+    {
+        this.name = userName;
+    }
+
+    public String getContact()
+    {
+        return contact;
+    }
+
+    public void setContact(String contact)
+    {
+        this.contact = contact;
+    }
+
     public String getEmail()
     {
         return email;
@@ -213,178 +211,116 @@ public class SysUser extends BaseEntity
         this.email = email;
     }
 
-    @Size(min = 0, max = 11, message = "手机号码长度不能超过11个字符")
+    public String getPhone()
+    {
+        return phone;
+    }
+
+    public void setPhone(String phone)
+    {
+        this.phone = phone;
+    }
+
+    // 为了兼容旧代码，保留getPhonenumber和setPhonenumber方法
     public String getPhonenumber()
     {
-        return phonenumber;
+        return phone;
     }
 
     public void setPhonenumber(String phonenumber)
     {
-        this.phonenumber = phonenumber;
+        this.phone = phonenumber;
     }
 
-    public String getSex()
-    {
-        return sex;
-    }
-
-    public void setSex(String sex)
-    {
-        this.sex = sex;
-    }
-
+    // 为了兼容旧代码，保留getAvatar和setAvatar方法（新表结构中没有avatar字段）
     public String getAvatar()
     {
-        return avatar;
+        return null;
     }
 
     public void setAvatar(String avatar)
     {
-        this.avatar = avatar;
+        // 新表结构中没有avatar字段，此方法为空实现
     }
 
-    @JsonIgnore
-    public String getPassword()
+    public Integer getIsVerified()
     {
-        return password;
+        return isVerified;
     }
 
-    public void setPassword(String password)
+    public void setIsVerified(Integer isVerified)
     {
-        this.password = password;
+        this.isVerified = isVerified;
     }
 
-    @JsonIgnore
-    public String getSalt()
+    public Date getCreatedAt()
     {
-        return salt;
+        return createdAt;
     }
 
-    public void setSalt(String salt)
+    public void setCreatedAt(Date createdAt)
     {
-        this.salt = salt;
+        this.createdAt = createdAt;
     }
 
-    public String getStatus()
+    public Date getUpdatedAt()
     {
-        return status;
+        return updatedAt;
     }
 
-    public void setStatus(String status)
+    public void setUpdatedAt(Date updatedAt)
     {
-        this.status = status;
+        this.updatedAt = updatedAt;
     }
 
-    public String getDelFlag()
+    // 为了兼容BaseEntity，保留createTime和updateTime的getter/setter
+    @Override
+    public Date getCreateTime()
     {
-        return delFlag;
+        return createdAt;
     }
 
-    public void setDelFlag(String delFlag)
+    @Override
+    public void setCreateTime(Date createTime)
     {
-        this.delFlag = delFlag;
+        this.createdAt = createTime;
     }
 
-    public String getLoginIp()
+    @Override
+    public Date getUpdateTime()
     {
-        return loginIp;
+        return updatedAt;
     }
 
-    public void setLoginIp(String loginIp)
+    @Override
+    public void setUpdateTime(Date updateTime)
     {
-        this.loginIp = loginIp;
+        this.updatedAt = updateTime;
     }
 
-    public Date getLoginDate()
+    public boolean isAdmin()
     {
-        return loginDate;
+        return isAdmin(this.id);
     }
 
-    public void setLoginDate(Date loginDate)
+    public static boolean isAdmin(Long userId)
     {
-        this.loginDate = loginDate;
-    }
-
-    public Date getPwdUpdateDate()
-    {
-        return pwdUpdateDate;
-    }
-
-    public void setPwdUpdateDate(Date pwdUpdateDate)
-    {
-        this.pwdUpdateDate = pwdUpdateDate;
-    }
-
-    public SysDept getDept()
-    {
-        if (dept == null)
-        {
-            dept = new SysDept();
-        }
-        return dept;
-    }
-
-    public void setDept(SysDept dept)
-    {
-        this.dept = dept;
-    }
-
-    public List<SysRole> getRoles()
-    {
-        return roles;
-    }
-
-    public void setRoles(List<SysRole> roles)
-    {
-        this.roles = roles;
-    }
-
-    public Long[] getRoleIds()
-    {
-        return roleIds;
-    }
-
-    public void setRoleIds(Long[] roleIds)
-    {
-        this.roleIds = roleIds;
-    }
-
-    public Long[] getPostIds()
-    {
-        return postIds;
-    }
-
-    public void setPostIds(Long[] postIds)
-    {
-        this.postIds = postIds;
+        return userId != null && 1L == userId;
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-                .append("userId", getUserId())
-                .append("deptId", getDeptId())
-                .append("loginName", getLoginName())
-                .append("userName", getUserName())
-                .append("userType", getUserType())  // 已包含userType
+                .append("id", getId())
+                .append("username", getUsername())
+                .append("role", getRole())
+                .append("name", getName())
+                .append("contact", getContact())
                 .append("email", getEmail())
-                .append("phonenumber", getPhonenumber())
-                .append("sex", getSex())
-                .append("avatar", getAvatar())
-                .append("password", getPassword())
-                .append("salt", getSalt())
-                .append("status", getStatus())
-                .append("delFlag", getDelFlag())
-                .append("loginIp", getLoginIp())
-                .append("loginDate", getLoginDate())
-                .append("createBy", getCreateBy())
-                .append("createTime", getCreateTime())
-                .append("updateBy", getUpdateBy())
-                .append("updateTime", getUpdateTime())
-                .append("remark", getRemark())
-                .append("dept", getDept())
-                .append("roles", getRoles())
+                .append("phone", getPhone())
+                .append("isVerified", getIsVerified())
+                .append("createdAt", getCreatedAt())
+                .append("updatedAt", getUpdatedAt())
                 .toString();
     }
 }

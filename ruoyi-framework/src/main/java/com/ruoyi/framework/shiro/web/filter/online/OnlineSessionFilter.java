@@ -54,10 +54,10 @@ public class OnlineSessionFilter extends AccessControlFilter
                 SysUser user = ShiroUtils.getSysUser();
                 if (user != null)
                 {
-                    onlineSession.setUserId(user.getUserId());
-                    onlineSession.setLoginName(user.getLoginName());
-					onlineSession.setAvatar(user.getAvatar());
-                    onlineSession.setDeptName(user.getDept().getDeptName());
+                    onlineSession.setUserId(user.getId());
+                    onlineSession.setLoginName(user.getUsername());
+                    // 新表结构：不再有avatar和dept字段
+                    onlineSession.setDeptName("");
                     onlineSession.markAttributeChanged();
                 }
             }

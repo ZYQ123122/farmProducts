@@ -1,6 +1,5 @@
 package com.ruoyi.web.controller.system;
 
-import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -12,7 +11,6 @@ import com.ruoyi.common.constant.ShiroConstants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.text.Convert;
-import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.service.ISysConfigService;
@@ -25,23 +23,68 @@ public class FarmerController extends BaseController {
 
     @GetMapping("/index")
     public String index(ModelMap mmap, HttpServletRequest request) {
-        SysUser user = getSysUser();
-        mmap.put("user", user);
-        mmap.put("sideTheme", configService.selectConfigByKey("sys.index.sideTheme"));
-        mmap.put("skinName", configService.selectConfigByKey("sys.index.skinName"));
-        Boolean footer = Convert.toBool(configService.selectConfigByKey("sys.index.footer"), true);
-        Boolean tagsView = Convert.toBool(configService.selectConfigByKey("sys.index.tagsView"), true);
-        mmap.put("footer", footer);
-        mmap.put("tagsView", tagsView);
-        mmap.put("mainClass", contentMainClass(footer, tagsView));
-        mmap.put("copyrightYear", RuoYiConfig.getCopyrightYear());
-        mmap.put("demoEnabled", RuoYiConfig.isDemoEnabled());
-        mmap.put("isDefaultModifyPwd", initPasswordIsModify(user.getPwdUpdateDate()));
-        mmap.put("isPasswordExpired", passwordIsExpiration(user.getPwdUpdateDate()));
-        boolean isMobile = ServletUtils.checkAgentIsMobile(ServletUtils.getRequest().getHeader("User-Agent"));
-        mmap.put("isMobile", isMobile);
-        request.getSession().setAttribute(ShiroConstants.CSRF_TOKEN, ServletUtils.generateToken());
-        return "farmer/index";
+        try
+        {
+            SysUser user = getSysUser();
+            if (user == null)
+            {
+                return "redirect:/login";
+            }
+            mmap.put("user", user);
+            
+            // 安全地获取配置值
+            try
+            {
+                mmap.put("sideTheme", getConfigValue("sys.index.sideTheme", "dark"));
+                mmap.put("skinName", getConfigValue("sys.index.skinName", "blue"));
+                Boolean footer = Convert.toBool(getConfigValue("sys.index.footer", "true"), true);
+                Boolean tagsView = Convert.toBool(getConfigValue("sys.index.tagsView", "true"), true);
+                mmap.put("footer", footer);
+                mmap.put("tagsView", tagsView);
+                mmap.put("mainClass", contentMainClass(footer, tagsView));
+            }
+            catch (Exception e)
+            {
+                // 配置服务失败时使用默认值
+                mmap.put("sideTheme", "dark");
+                mmap.put("skinName", "blue");
+                mmap.put("footer", true);
+                mmap.put("tagsView", true);
+                mmap.put("mainClass", "");
+            }
+            
+            mmap.put("copyrightYear", RuoYiConfig.getCopyrightYear());
+            mmap.put("demoEnabled", RuoYiConfig.isDemoEnabled());
+            // 新表结构：不再有pwdUpdateDate字段
+            mmap.put("isDefaultModifyPwd", false);
+            mmap.put("isPasswordExpired", false);
+            boolean isMobile = ServletUtils.checkAgentIsMobile(ServletUtils.getRequest().getHeader("User-Agent"));
+            mmap.put("isMobile", isMobile);
+            request.getSession().setAttribute(ShiroConstants.CSRF_TOKEN, ServletUtils.generateToken());
+            return "farmer/index";
+        }
+        catch (Exception e)
+        {
+            logger.error("访问农户首页时发生异常", e);
+            return "redirect:/login";
+        }
+    }
+    
+    /**
+     * 安全地获取配置值，如果失败则返回默认值
+     */
+    private String getConfigValue(String key, String defaultValue)
+    {
+        try
+        {
+            String value = configService.selectConfigByKey(key);
+            return StringUtils.isNotEmpty(value) ? value : defaultValue;
+        }
+        catch (Exception e)
+        {
+            logger.warn("获取配置 {} 失败，使用默认值: {}", key, defaultValue, e);
+            return defaultValue;
+        }
     }
     @GetMapping("/main")
     public String main(ModelMap mmap) {
@@ -116,20 +159,4 @@ public class FarmerController extends BaseController {
         return StringUtils.EMPTY;
     }
 
-    private boolean initPasswordIsModify(Date pwdUpdateDate) {
-        Integer initPasswordModify = Convert.toInt(configService.selectConfigByKey("sys.account.initPasswordModify"));
-        return initPasswordModify != null && initPasswordModify == 1 && pwdUpdateDate == null;
-    }
-
-    private boolean passwordIsExpiration(Date pwdUpdateDate) {
-        Integer passwordValidateDays = Convert.toInt(configService.selectConfigByKey("sys.account.passwordValidateDays"));
-        if (passwordValidateDays != null && passwordValidateDays > 0) {
-            if (StringUtils.isNull(pwdUpdateDate)) {
-                return true;
-            }
-            Date nowDate = DateUtils.getNowDate();
-            return DateUtils.differentDaysByMillisecond(nowDate, pwdUpdateDate) > passwordValidateDays;
-        }
-        return false;
-    }
 }

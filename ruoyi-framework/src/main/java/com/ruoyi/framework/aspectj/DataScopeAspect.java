@@ -1,18 +1,13 @@
 package com.ruoyi.framework.aspectj;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.annotation.DataScope;
-import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.context.PermissionContextHolder;
 import com.ruoyi.common.core.domain.BaseEntity;
-import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.core.domain.entity.SysUser;
-import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.utils.ShiroUtils;
 import com.ruoyi.common.utils.StringUtils;
 
@@ -88,72 +83,35 @@ public class DataScopeAspect
      */
     public static void dataScopeFilter(JoinPoint joinPoint, SysUser user, String deptAlias, String userAlias, String permission)
     {
+        // 新表结构：简化数据权限，基于用户ID和角色进行过滤
         StringBuilder sqlString = new StringBuilder();
-        List<String> conditions = new ArrayList<String>();
-        List<String> scopeCustomIds = new ArrayList<String>();
-        user.getRoles().forEach(role -> {
-            if (DATA_SCOPE_CUSTOM.equals(role.getDataScope()) && StringUtils.equals(role.getStatus(), UserConstants.ROLE_NORMAL) && StringUtils.containsAny(role.getPermissions(), Convert.toStrArray(permission)))
-            {
-                scopeCustomIds.add(Convert.toStr(role.getRoleId()));
-            }
-        });
-
-        for (SysRole role : user.getRoles())
+        
+        // 管理员拥有所有权限
+        if (user.isAdmin() || "admin".equals(user.getRole()))
         {
-            String dataScope = role.getDataScope();
-            if (conditions.contains(dataScope) || StringUtils.equals(role.getStatus(), UserConstants.ROLE_DISABLE))
-            {
-                continue;
-            }
-            if (!StringUtils.containsAny(role.getPermissions(), Convert.toStrArray(permission)))
-            {
-                continue;
-            }
-            if (DATA_SCOPE_ALL.equals(dataScope))
-            {
-                sqlString = new StringBuilder();
-                conditions.add(dataScope);
-                break;
-            }
-            else if (DATA_SCOPE_CUSTOM.equals(dataScope))
-            {
-                if (scopeCustomIds.size() > 1)
-                {
-                    // 多个自定数据权限使用in查询，避免多次拼接。
-                    sqlString.append(StringUtils.format(" OR {}.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id in ({}) ) ", deptAlias, String.join(",", scopeCustomIds)));
-                }
-                else
-                {
-                    sqlString.append(StringUtils.format(" OR {}.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = {} ) ", deptAlias, role.getRoleId()));
-                }
-            }
-            else if (DATA_SCOPE_DEPT.equals(dataScope))
-            {
-                sqlString.append(StringUtils.format(" OR {}.dept_id = {} ", deptAlias, user.getDeptId()));
-            }
-            else if (DATA_SCOPE_DEPT_AND_CHILD.equals(dataScope))
-            {
-                sqlString.append(StringUtils.format(" OR {}.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = {} or find_in_set( {} , ancestors ) )", deptAlias, user.getDeptId(), user.getDeptId()));
-            }
-            else if (DATA_SCOPE_SELF.equals(dataScope))
-            {
-                if (StringUtils.isNotBlank(userAlias))
-                {
-                    sqlString.append(StringUtils.format(" OR {}.user_id = {} ", userAlias, user.getUserId()));
-                }
-                else
-                {
-                    // 数据权限为仅本人且没有userAlias别名不查询任何数据
-                    sqlString.append(StringUtils.format(" OR {}.dept_id = 0 ", deptAlias));
-                }
-            }
-            conditions.add(dataScope);
+            // 不添加任何过滤条件，允许查看所有数据
+            return;
         }
-
-        // 角色都不包含传递过来的权限字符，这个时候sqlString也会为空，所以要限制一下,不查询任何数据
-        if (StringUtils.isEmpty(conditions))
+        
+        // 其他用户只能查看自己的数据
+        if (StringUtils.isNotBlank(userAlias))
         {
-            sqlString.append(StringUtils.format(" OR {}.dept_id = 0 ", deptAlias));
+            // 如果有userAlias，按用户ID过滤
+            sqlString.append(StringUtils.format(" OR {}.user_id = {} ", userAlias, user.getId()));
+        }
+        else if (StringUtils.isNotBlank(deptAlias))
+        {
+            // 如果没有userAlias但有deptAlias，按角色过滤
+            // 农户只能看自己的商品
+            if ("farmer".equals(user.getRole()))
+            {
+                sqlString.append(StringUtils.format(" OR {}.farmer_id = {} ", deptAlias, user.getId()));
+            }
+            // 买家只能看自己的需求
+            else if ("buyer".equals(user.getRole()))
+            {
+                sqlString.append(StringUtils.format(" OR {}.buyer_id = {} ", deptAlias, user.getId()));
+            }
         }
 
         if (StringUtils.isNotBlank(sqlString.toString()))
