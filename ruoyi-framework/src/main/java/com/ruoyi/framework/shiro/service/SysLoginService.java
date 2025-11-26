@@ -1,19 +1,13 @@
 package com.ruoyi.framework.shiro.service;
 
-import java.util.List;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.ShiroConstants;
 import com.ruoyi.common.constant.UserConstants;
-import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.core.domain.entity.SysUser;
-import com.ruoyi.common.enums.UserStatus;
 import com.ruoyi.common.exception.user.BlackListException;
 import com.ruoyi.common.exception.user.CaptchaException;
-import com.ruoyi.common.exception.user.UserBlockedException;
-import com.ruoyi.common.exception.user.UserDeleteException;
 import com.ruoyi.common.exception.user.UserNotExistsException;
 import com.ruoyi.common.exception.user.UserPasswordNotMatchException;
 import com.ruoyi.common.utils.DateUtils;
@@ -25,7 +19,6 @@ import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.framework.manager.factory.AsyncFactory;
 import com.ruoyi.system.service.ISysConfigService;
-import com.ruoyi.system.service.ISysMenuService;
 import com.ruoyi.system.service.ISysUserService;
 
 /**
@@ -41,9 +34,6 @@ public class SysLoginService
 
     @Autowired
     private ISysUserService userService;
-
-    @Autowired
-    private ISysMenuService menuService;
 
     @Autowired
     private ISysConfigService configService;
@@ -110,66 +100,19 @@ public class SysLoginService
             throw new UserNotExistsException();
         }
         
-        if (UserStatus.DELETED.getCode().equals(user.getDelFlag()))
-        {
-            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.password.delete")));
-            throw new UserDeleteException();
-        }
-        
-        if (UserStatus.DISABLE.getCode().equals(user.getStatus()))
-        {
-            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.blocked")));
-            throw new UserBlockedException();
-        }
+        // 新表结构：检查isVerified字段（0:未通过,1:已通过）
+        // 如果用户未通过验证，可以阻止登录（可选）
+        // if (user.getIsVerified() == null || user.getIsVerified() == 0)
+        // {
+        //     AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.not.verified")));
+        //     throw new UserBlockedException();
+        // }
 
         passwordService.validate(user, password);
 
         AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_SUCCESS, MessageUtils.message("user.login.success")));
-        setRolePermission(user);
-        recordLoginInfo(user.getUserId());
+        recordLoginInfo(user.getId());
         return user;
-    }
-
-    /**
-    private boolean maybeEmail(String username)
-    {
-        if (!username.matches(UserConstants.EMAIL_PATTERN))
-        {
-            return false;
-        }
-        return true;
-    }
-
-    private boolean maybeMobilePhoneNumber(String username)
-    {
-        if (!username.matches(UserConstants.MOBILE_PHONE_NUMBER_PATTERN))
-        {
-            return false;
-        }
-        return true;
-    }
-    */
-
-    /**
-     * 设置角色权限
-     *
-     * @param user 用户信息
-     */
-    public void setRolePermission(SysUser user)
-    {
-        List<SysRole> roles = user.getRoles();
-        if (!roles.isEmpty())
-        {
-            // 设置permissions属性，以便数据权限匹配权限
-            for (SysRole role : roles)
-            {
-                if (StringUtils.equals(role.getStatus(), UserConstants.ROLE_NORMAL) && !role.isAdmin())
-                {
-                    Set<String> rolePerms = menuService.selectPermsByRoleId(role.getRoleId());
-                    role.setPermissions(rolePerms);
-                }
-            }
-        }
     }
 
     /**

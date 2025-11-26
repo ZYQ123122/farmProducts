@@ -1,7 +1,5 @@
 package com.ruoyi.web.controller.system;
 
-import java.util.Date;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +13,6 @@ import com.ruoyi.common.constant.ShiroConstants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.text.Convert;
-import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.service.ISysConfigService;
@@ -42,8 +39,9 @@ public class BuyerController extends BaseController
         mmap.put("mainClass", contentMainClass(footer, tagsView));
         mmap.put("copyrightYear", RuoYiConfig.getCopyrightYear());
         mmap.put("demoEnabled", RuoYiConfig.isDemoEnabled());
-        mmap.put("isDefaultModifyPwd", initPasswordIsModify(user.getPwdUpdateDate()));
-        mmap.put("isPasswordExpired", passwordIsExpiration(user.getPwdUpdateDate()));
+        // 新表结构：不再有pwdUpdateDate字段
+        mmap.put("isDefaultModifyPwd", false);
+        mmap.put("isPasswordExpired", false);
         boolean isMobile = ServletUtils.checkAgentIsMobile(ServletUtils.getRequest().getHeader("User-Agent"));
         mmap.put("isMobile", isMobile);
         request.getSession().setAttribute(ShiroConstants.CSRF_TOKEN, ServletUtils.generateToken());
@@ -55,6 +53,12 @@ public class BuyerController extends BaseController
     {
         mmap.put("version", RuoYiConfig.getVersion());
         return "user/main";
+    }
+
+    @GetMapping("/home")
+    public String home()
+    {
+        return "user/home";
     }
 
     @GetMapping("/requirements")
@@ -104,24 +108,4 @@ public class BuyerController extends BaseController
         return StringUtils.EMPTY;
     }
 
-    private boolean initPasswordIsModify(Date pwdUpdateDate)
-    {
-        Integer initPasswordModify = Convert.toInt(configService.selectConfigByKey("sys.account.initPasswordModify"));
-        return initPasswordModify != null && initPasswordModify == 1 && pwdUpdateDate == null;
-    }
-
-    private boolean passwordIsExpiration(Date pwdUpdateDate)
-    {
-        Integer passwordValidateDays = Convert.toInt(configService.selectConfigByKey("sys.account.passwordValidateDays"));
-        if (passwordValidateDays != null && passwordValidateDays > 0)
-        {
-            if (StringUtils.isNull(pwdUpdateDate))
-            {
-                return true;
-            }
-            Date nowDate = DateUtils.getNowDate();
-            return DateUtils.differentDaysByMillisecond(nowDate, pwdUpdateDate) > passwordValidateDays;
-        }
-        return false;
-    }
 }

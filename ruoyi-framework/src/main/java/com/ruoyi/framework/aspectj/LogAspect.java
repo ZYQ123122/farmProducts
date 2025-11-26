@@ -16,19 +16,11 @@ import org.springframework.core.NamedThreadLocal;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.multipart.MultipartFile;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.support.spring.PropertyPreFilters;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.domain.entity.SysUser;
-import com.ruoyi.common.core.text.Convert;
-import com.ruoyi.common.enums.BusinessStatus;
-import com.ruoyi.common.utils.ExceptionUtil;
-import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.common.utils.ShiroUtils;
-import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.framework.manager.AsyncManager;
-import com.ruoyi.framework.manager.factory.AsyncFactory;
-import com.ruoyi.system.domain.SysOperLog;
+// import com.ruoyi.system.domain.SysOperLog; // 已删除
 
 /**
  * 操作日志记录处理
@@ -87,39 +79,17 @@ public class LogAspect
             SysUser currentUser = ShiroUtils.getSysUser();
 
             // *========数据库日志=========*//
-            SysOperLog operLog = new SysOperLog();
-            operLog.setStatus(BusinessStatus.SUCCESS.ordinal());
-            // 请求的地址
-            String ip = ShiroUtils.getIp();
-            operLog.setOperIp(ip);
-            operLog.setOperUrl(StringUtils.substring(ServletUtils.getRequest().getRequestURI(), 0, 255));
-            if (currentUser != null)
-            {
-                operLog.setOperName(currentUser.getLoginName());
-                if (StringUtils.isNotNull(currentUser.getDept())
-                        && StringUtils.isNotEmpty(currentUser.getDept().getDeptName()))
-                {
-                    operLog.setDeptName(currentUser.getDept().getDeptName());
-                }
-            }
-
-            if (e != null)
-            {
-                operLog.setStatus(BusinessStatus.FAIL.ordinal());
-                operLog.setErrorMsg(StringUtils.substring(Convert.toStr(e.getMessage(), ExceptionUtil.getExceptionMessage(e)), 0, 2000));
-            }
-            // 设置方法名称
+            // 简化：不再使用操作日志表
+            // SysOperLog operLog = new SysOperLog();
+            // 只记录到应用日志
             String className = joinPoint.getTarget().getClass().getName();
             String methodName = joinPoint.getSignature().getName();
-            operLog.setMethod(className + "." + methodName + "()");
-            // 设置请求方式
-            operLog.setRequestMethod(ServletUtils.getRequest().getMethod());
-            // 处理设置注解上的参数
-            getControllerMethodDescription(joinPoint, controllerLog, operLog, jsonResult);
-            // 设置消耗时间
-            operLog.setCostTime(System.currentTimeMillis() - TIME_THREADLOCAL.get());
-            // 保存数据库
-            AsyncManager.me().execute(AsyncFactory.recordOper(operLog));
+            String ip = ShiroUtils.getIp();
+            if (currentUser != null)
+            {
+                log.info("操作日志: 用户[{}] 执行方法[{}.{}] IP[{}]", 
+                    currentUser.getUsername(), className, methodName, ip);
+            }
         }
         catch (Exception exp)
         {
@@ -140,50 +110,9 @@ public class LogAspect
      * @param operLog 操作日志
      * @throws Exception
      */
-    public void getControllerMethodDescription(JoinPoint joinPoint, Log log, SysOperLog operLog, Object jsonResult) throws Exception
+    public void getControllerMethodDescription(JoinPoint joinPoint, Log log, Object operLog, Object jsonResult) throws Exception
     {
-        // 设置action动作
-        operLog.setBusinessType(log.businessType().ordinal());
-        // 设置标题
-        operLog.setTitle(log.title());
-        // 设置操作人类别
-        operLog.setOperatorType(log.operatorType().ordinal());
-        // 是否需要保存request，参数和值
-        if (log.isSaveRequestData())
-        {
-            // 获取参数的信息，传入到数据库中。
-            setRequestValue(joinPoint, operLog, log.excludeParamNames());
-        }
-        // 是否需要保存response，参数和值
-        if (log.isSaveResponseData() && StringUtils.isNotNull(jsonResult))
-        {
-            operLog.setJsonResult(StringUtils.substring(JSONObject.toJSONString(jsonResult), 0, 2000));
-        }
-    }
-
-    /**
-     * 获取请求的参数，放到log中
-     * 
-     * @param operLog 操作日志
-     * @throws Exception 异常
-     */
-    private void setRequestValue(JoinPoint joinPoint, SysOperLog operLog, String[] excludeParamNames) throws Exception
-    {
-        Map<String, String[]> map = ServletUtils.getRequest().getParameterMap();
-        if (StringUtils.isNotEmpty(map))
-        {
-            String params = JSONObject.toJSONString(map, excludePropertyPreFilter(excludeParamNames));
-            operLog.setOperParam(StringUtils.substring(params, 0, 2000));
-        }
-        else
-        {
-            Object args = joinPoint.getArgs();
-            if (StringUtils.isNotNull(args))
-            {
-                String params = argsArrayToString(joinPoint.getArgs(), excludeParamNames);
-                operLog.setOperParam(StringUtils.substring(params, 0, 2000));
-            }
-        }
+        // 简化：不再使用操作日志表
     }
 
     /**
@@ -192,32 +121,6 @@ public class LogAspect
     public PropertyPreFilters.MySimplePropertyPreFilter excludePropertyPreFilter(String[] excludeParamNames)
     {
         return new PropertyPreFilters().addFilter().addExcludes(ArrayUtils.addAll(EXCLUDE_PROPERTIES, excludeParamNames));
-    }
-
-    /**
-     * 参数拼装
-     */
-    private String argsArrayToString(Object[] paramsArray, String[] excludeParamNames)
-    {
-        String params = "";
-        if (paramsArray != null && paramsArray.length > 0)
-        {
-            for (Object o : paramsArray)
-            {
-                if (StringUtils.isNotNull(o) && !isFilterObject(o))
-                {
-                    try
-                    {
-                        Object jsonObj = JSONObject.toJSONString(o, excludePropertyPreFilter(excludeParamNames));
-                        params += jsonObj.toString() + " ";
-                    }
-                    catch (Exception e)
-                    {
-                    }
-                }
-            }
-        }
-        return params.trim();
     }
 
     /**

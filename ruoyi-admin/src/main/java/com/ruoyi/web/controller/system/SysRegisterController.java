@@ -29,8 +29,8 @@ public class SysRegisterController extends BaseController
     @Autowired
     private ISysConfigService configService;
 
-    // 合法的用户身份类型
-    private static final List<String> VALID_USER_TYPES = Arrays.asList("02", "03", "04", "05");
+    // 合法的用户角色类型（新表结构使用role字段）
+    private static final List<String> VALID_ROLES = Arrays.asList("farmer", "expert", "bank", "buyer");
 
     @GetMapping("/register")
     public String register()
@@ -48,18 +48,24 @@ public class SysRegisterController extends BaseController
             return error("当前系统没有开启注册功能！");
         }
 
-        // 2. 校验 userType 是否存在且合法
-        String userType = user.getUserType();
-        if (StringUtils.isEmpty(userType))
+        // 2. 校验 role 是否存在且合法（新表结构使用role字段）
+        String role = user.getRole();
+        if (StringUtils.isEmpty(role))
         {
             return error("请选择用户身份");
         }
-        if (!VALID_USER_TYPES.contains(userType))
+        if (!VALID_ROLES.contains(role))
         {
             return error("用户身份不合法，请选择正确的身份类型");
         }
 
-        // 3. 调用注册服务（传递包含 userType 的 user 对象）
+        // 3. 设置username（新表结构使用username字段）
+        if (StringUtils.isEmpty(user.getUsername()))
+        {
+            user.setUsername(user.getLoginName());
+        }
+
+        // 4. 调用注册服务（传递包含 role 的 user 对象）
         String msg = registerService.register(user);
         return StringUtils.isEmpty(msg) ? success("注册成功") : error(msg);
     }

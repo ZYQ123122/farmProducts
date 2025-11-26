@@ -64,6 +64,7 @@ public class TradeOrderServiceImpl implements ITradeOrderService
         TradeOrder order = new TradeOrder();
         order.setProductId(productId);
         order.setBuyerId(buyerId);
+        order.setFarmerId(product.getFarmerId()); // 设置农户ID
         order.setQuantity(quantity);
         order.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
         order.setStatus(STATUS_PENDING);
