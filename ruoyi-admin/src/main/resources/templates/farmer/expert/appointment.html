@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>预约专家</title>
+  <th:block th:include="include :: header('预约专家')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    .appointment-page {
+      padding: 8px 0 0 0;
+    }
+
+    .appointment-toolbar {
+      margin-bottom: 6px;
+    }
+
+    #appointmentContainer {
+      margin-top: 0;
+    }
+
+    .expert-card {
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      background: #fff;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      transition: box-shadow 0.3s;
+      display: flex;
+      align-items: center;
+    }
+
+    .expert-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .expert-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+
+    .expert-avatar i {
+      font-size: 40px;
+      color: #999;
+    }
+
+    .expert-info {
+      flex: 1;
+    }
+
+    .expert-info h4 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .expert-info p {
+      margin: 4px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .expert-actions {
+      text-align: right;
+      margin-left: 20px;
+    }
+
+    .expert-empty {
+      text-align: center;
+      padding: 60px 0;
+      color: #999;
+      background: #fff;
+      border: 1px dashed #d9d9d9;
+      border-radius: 4px;
+    }
+
+    .expert-empty i {
+      font-size: 48px;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+
+    .modal .form-group {
+      margin-bottom: 15px;
+    }
+
+    .modal .control-label {
+      font-weight: 600;
+    }
+
+    .expert-specialty {
+      display: inline-block;
+      background: #e8f4f8;
+      color: #31708f;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      margin-right: 5px;
+    }
+
+    .appointment-card {
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      background: #fff;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      transition: box-shadow 0.3s;
+    }
+
+    .appointment-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .appointment-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .appointment-card .appointment-content {
+      color: #666;
+      margin: 6px 0;
+      font-size: 14px;
+    }
+
+    .appointment-card .appointment-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #999;
+      margin-top: 8px;
+    }
+
+    .badge-status {
+      padding: 4px 8px;
+      border-radius: 3px;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .status-pending { background-color: #f0ad4e; }
+    .status-accepted { background-color: #5cb85c; }
+    .status-rejected { background-color: #d9534f; }
+    .status-cancelled { background-color: #999; }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="container-div appointment-page">
+  <div class="btn-group-sm appointment-toolbar">
+    <div class="btn-group" style="margin-bottom: 10px;">
+      <button type="button" class="btn btn-default active" id="btnTabExperts">可预约专家</button>
+      <button type="button" class="btn btn-default" id="btnTabMyAppointments">我的预约</button>
+    </div>
+    <div class="input-group" style="width: 300px; float: right;">
+      <input type="text" class="form-control" id="searchInput" placeholder="搜索专家姓名或专业">
+      <span class="input-group-btn">
+        <button class="btn btn-primary" type="button" id="btnSearch"><i class="fa fa-search"></i> 搜索</button>
+      </span>
+    </div>
+  </div>
+  <div id="appointmentContainer"></div>
+</div>
+
+<!-- 预约专家模态框 -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="appointmentModalTitle">预约专家</h4>
+      </div>
+      <div class="modal-body">
+        <form id="appointmentForm" class="form-horizontal">
+          <input type="hidden" id="expertId">
+          <div class="form-group">
+            <label class="col-sm-3 control-label">专家姓名：</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="expertName" readonly>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-3 control-label">预约时间：</label>
+            <div class="col-sm-8">
+              <input type="datetime-local" class="form-control" id="appointmentTime" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-3 control-label is-required">预约说明：</label>
+            <div class="col-sm-8">
+              <textarea class="form-control" id="appointmentNote" rows="5" placeholder="请说明预约目的和需要咨询的问题" required maxlength="500"></textarea>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-3 control-label">联系方式：</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="contactPhone" placeholder="请输入您的联系电话" maxlength="20">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" id="btnSaveAppointment">提交预约</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+  var currentTab = 'experts'; // 'experts' 或 'myAppointments'
+
+  $(function() {
+    loadExperts();
+    
+    // 标签页切换
+    $('#btnTabExperts').click(function() {
+      currentTab = 'experts';
+      updateTabs();
+      loadExperts();
+    });
+
+    $('#btnTabMyAppointments').click(function() {
+      currentTab = 'myAppointments';
+      updateTabs();
+      loadMyAppointments();
+    });
+    
+    // 搜索
+    $('#btnSearch').click(function() {
+      if (currentTab === 'experts') {
+        loadExperts();
+      }
+    });
+
+    $('#searchInput').keypress(function(e) {
+      if (e.which === 13 && currentTab === 'experts') {
+        loadExperts();
+      }
+    });
+
+    // 提交预约
+    $('#btnSaveAppointment').click(function() {
+      if (validateAppointmentForm()) {
+        saveAppointment();
+      }
+    });
+  });
+
+  // 更新标签页状态
+  function updateTabs() {
+    if (currentTab === 'experts') {
+      $('#btnTabExperts').addClass('active');
+      $('#btnTabMyAppointments').removeClass('active');
+      $('#searchInput').show().parent().show();
+    } else {
+      $('#btnTabExperts').removeClass('active');
+      $('#btnTabMyAppointments').addClass('active');
+      $('#searchInput').hide().parent().hide();
+    }
+  }
+
+  // 加载专家列表
+  function loadExperts() {
+    var keyword = $('#searchInput').val();
+    var prefix = ctx + "system/consultation";
+    
+    $.ajax({
+      url: prefix + "/getExpertDetailList",
+      type: "GET",
+      data: {
+        keyword: keyword || ''
+      },
+      success: function(result) {
+        if (result.code == web_status.SUCCESS) {
+          var experts = result.data || [];
+          renderExperts(experts);
+        } else {
+          $.modal.alertError(result.msg || "加载专家列表失败");
+          renderExperts([]);
+        }
+      },
+      error: function() {
+        $.modal.alertError("加载专家列表失败");
+        renderExperts([]);
+      }
+    });
+  }
+
+  // 渲染专家列表
+  function renderExperts(experts) {
+    var container = $('#appointmentContainer');
+    container.empty();
+
+    if (!experts || experts.length === 0) {
+      container.html('<div class="expert-empty"><i class="fa fa-user-md"></i><p>暂无专家信息</p></div>');
+      return;
+    }
+
+    experts.forEach(function(expert) {
+      var expertId = expert.id || expert.userId;
+      var expertName = expert.name || expert.userName || expert.loginName || '专家';
+      var specialty = expert.specialty || '农业专家';
+      var experience = expert.experience || '';
+      var description = expert.description || '';
+      var phone = expert.phone || expert.phonenumber || '';
+      
+      var cardHtml = '<div class="expert-card">' +
+        '<div class="expert-avatar">' +
+        '<i class="fa fa-user-md"></i>' +
+        '</div>' +
+        '<div class="expert-info">' +
+        '<h4>' + expertName + ' <span class="expert-specialty">' + specialty + '</span></h4>';
+      
+      if (experience) {
+        cardHtml += '<p><i class="fa fa-clock-o"></i> ' + experience + '</p>';
+      }
+      if (description) {
+        cardHtml += '<p><i class="fa fa-info-circle"></i> ' + description + '</p>';
+      }
+      if (phone) {
+        cardHtml += '<p><i class="fa fa-phone"></i> ' + phone + '</p>';
+      }
+      
+      cardHtml += '</div>' +
+        '<div class="expert-actions">' +
+        '<button class="btn btn-primary" onclick="openAppointmentModal(' + expertId + ', \'' + expertName.replace(/'/g, "\\'") + '\')">' +
+        '<i class="fa fa-calendar"></i> 预约</button>' +
+        '</div>' +
+        '</div>';
+
+      container.append(cardHtml);
+    });
+  }
+
+  // 打开预约模态框
+  function openAppointmentModal(expertId, expertName) {
+    $('#expertId').val(expertId);
+    $('#expertName').val(expertName);
+    $('#appointmentTime').val('');
+    $('#appointmentNote').val('');
+    $('#contactPhone').val('');
+    $('#appointmentModal').modal('show');
+  }
+
+  // 验证表单
+  function validateAppointmentForm() {
+    if (!$('#appointmentTime').val()) {
+      $.modal.alertWarning("请选择预约时间");
+      return false;
+    }
+    if (!$('#appointmentNote').val()) {
+      $.modal.alertWarning("请输入预约说明");
+      return false;
+    }
+    return true;
+  }
+
+  // 保存预约
+  function saveAppointment() {
+    var data = {
+      expertId: $('#expertId').val(),
+      appointmentTime: $('#appointmentTime').val(),
+      note: $('#appointmentNote').val(),
+      contactPhone: $('#contactPhone').val()
+    };
+
+    var prefix = ctx + "system/appointment";
+
+    $.ajax({
+      url: prefix + "/add",
+      type: "POST",
+      data: data,
+      success: function(result) {
+        if (result.code == web_status.SUCCESS) {
+          $.modal.msgSuccess("预约提交成功，专家会在24小时内联系您！");
+          $('#appointmentModal').modal('hide');
+          $('#appointmentForm')[0].reset();
+          // 刷新我的预约列表
+          if (currentTab === 'myAppointments') {
+            loadMyAppointments();
+          }
+        } else {
+          $.modal.alertError(result.msg || "预约提交失败");
+        }
+      },
+      error: function() {
+        $.modal.alertError("预约提交失败");
+      }
+    });
+  }
+
+  // 加载我的预约列表
+  function loadMyAppointments() {
+    var prefix = ctx + "system/appointment";
+    
+    $.ajax({
+      url: prefix + "/myList",
+      type: "POST",
+      data: {
+        status: '' // 获取所有状态的预约
+      },
+      success: function(result) {
+        if (result.code == web_status.SUCCESS) {
+          var appointments = result.data || [];
+          renderMyAppointments(appointments);
+        } else {
+          $.modal.alertError(result.msg || "加载预约列表失败");
+          renderMyAppointments([]);
+        }
+      },
+      error: function() {
+        $.modal.alertError("加载预约列表失败");
+        renderMyAppointments([]);
+      }
+    });
+  }
+
+  // 渲染我的预约列表
+  function renderMyAppointments(appointments) {
+    var container = $('#appointmentContainer');
+    container.empty();
+
+    if (!appointments || appointments.length === 0) {
+      container.html('<div class="expert-empty"><i class="fa fa-calendar"></i><p>暂无预约记录</p></div>');
+      return;
+    }
+
+    appointments.forEach(function(item) {
+      var statusTextMap = {
+        'pending': '待处理',
+        'accepted': '已接受',
+        'rejected': '已拒绝',
+        'cancelled': '已取消'
+      };
+      var statusClassMap = {
+        'pending': 'status-pending',
+        'accepted': 'status-accepted',
+        'rejected': 'status-rejected',
+        'cancelled': 'status-cancelled'
+      };
+      var statusText = statusTextMap[item.status] || item.status;
+      var statusClass = statusClassMap[item.status] || 'status-pending';
+
+      var appointmentTime = item.appointmentTime || '';
+      var createTime = item.createdAt || item.created_at || '';
+      var note = item.note || '';
+      if (note.length > 100) {
+        note = note.substring(0, 100) + '...';
+      }
+      var contact = item.contactPhone || '未填写';
+
+      // 需要获取专家信息，这里先显示专家ID，后续可以优化为显示专家姓名
+      var expertName = item.expertName || '专家ID: ' + (item.expertId || '');
+
+      var cardHtml = '<div class="appointment-card" data-id="' + item.id + '">' +
+        '<h4>' + expertName + ' <span class="badge-status ' + statusClass + '">' + statusText + '</span></h4>' +
+        '<div class="appointment-content"><strong>预约时间：</strong>' + appointmentTime + '</div>' +
+        '<div class="appointment-content"><strong>预约说明：</strong>' + (note || '无') + '</div>' +
+        '<div class="appointment-content"><strong>联系方式：</strong>' + contact + '</div>' +
+        '<div class="appointment-meta">' +
+        '<span>创建时间：' + createTime + '</span>' +
+        '</div>' +
+        '</div>';
+
+      container.append(cardHtml);
+    });
+  }
+</script>
+</body>
+</html>

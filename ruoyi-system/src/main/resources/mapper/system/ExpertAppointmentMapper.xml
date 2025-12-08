@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ExpertAppointmentMapper">
+
+    <resultMap id="ExpertAppointmentResult" type="com.ruoyi.system.domain.ExpertAppointment">
+        <id     property="id"               column="id"/>
+        <result property="userId"           column="user_id"/>
+        <result property="expertId"         column="expert_id"/>
+        <result property="appointmentTime"  column="appointment_time"/>
+        <result property="note"             column="note"/>
+        <result property="contactPhone"     column="contact_phone"/>
+        <result property="status"           column="status"/>
+        <result property="createdAt"        column="created_at"/>
+        <result property="updatedAt"        column="updated_at"/>
+        <result property="userName"         column="user_name"/>
+        <result property="expertName"       column="expert_name"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, expert_id, appointment_time, note, contact_phone, status, created_at, updated_at
+    </sql>
+
+    <select id="selectAppointmentListByUserId" resultMap="ExpertAppointmentResult">
+        SELECT
+        a.id, a.user_id, a.expert_id, a.appointment_time, a.note, a.contact_phone, a.status, a.created_at, a.updated_at,
+        e.user_name as expert_name
+        FROM expert_appointment a
+        LEFT JOIN sys_user e ON a.expert_id = e.user_id
+        WHERE a.user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND a.status = #{status}
+        </if>
+        ORDER BY a.created_at DESC
+    </select>
+
+    <select id="selectAppointmentListByExpertId" resultMap="ExpertAppointmentResult">
+        SELECT
+        a.id, a.user_id, a.expert_id, a.appointment_time, a.note, a.contact_phone, a.status, a.created_at, a.updated_at,
+        u.user_name
+        FROM expert_appointment a
+        LEFT JOIN sys_user u ON a.user_id = u.user_id
+        WHERE a.expert_id = #{expertId}
+        <if test="status != null and status != ''">
+            AND a.status = #{status}
+        </if>
+        ORDER BY a.created_at DESC
+    </select>
+
+    <select id="selectAppointmentById" parameterType="Long" resultMap="ExpertAppointmentResult">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM expert_appointment
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertAppointment" parameterType="com.ruoyi.system.domain.ExpertAppointment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO expert_appointment (user_id, expert_id, appointment_time, note, contact_phone, status)
+        VALUES (#{userId}, #{expertId}, #{appointmentTime}, #{note}, #{contactPhone}, #{status})
+    </insert>
+
+    <update id="updateAppointmentStatus">
+        UPDATE expert_appointment
+        SET status = #{status},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
+
+

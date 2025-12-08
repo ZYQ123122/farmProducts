@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>专家工作台</title>
+    <th:block th:include="include :: header('专家工作台')" />
+    <th:block th:include="include :: layout-latest-css" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12">
+            <h2 style="margin-top: 10px;">专家工作台</h2>
+            <p>欢迎回来，专家！当前时间：<span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd HH:mm')}"></span></p>
+        </div>
+    </div>
+    <div class="row" style="margin-top: 15px;">
+        <div class="col-sm-3">
+            <a th:href="@{/manager/consultation}" class="btn btn-primary btn-block">
+                <i class="fa fa-comments"></i> 咨询回复
+            </a>
+        </div>
+        <div class="col-sm-3">
+            <a th:href="@{/manager/knowledge}" class="btn btn-default btn-block">
+                <i class="fa fa-book"></i> 知识库管理
+            </a>
+        </div>
+        <div class="col-sm-3">
+            <a th:href="@{/manager/profile}" class="btn btn-default btn-block">
+                <i class="fa fa-id-card"></i> 我的专家资料
+            </a>
+        </div>
+        <div class="col-sm-3">
+            <a th:href="@{/manager/appointment}" class="btn btn-default btn-block">
+                <i class="fa fa-calendar"></i> 预约处理
+            </a>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+</body>
+</html>

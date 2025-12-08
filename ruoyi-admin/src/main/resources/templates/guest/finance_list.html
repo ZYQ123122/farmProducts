@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>融资管理</title>
+    <th:block th:include="include :: header('融资管理')" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="finance-form">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            状态：<select name="status" id="status">
+                                <option value="">所有</option>
+                                <option value="submitted">已提交</option>
+                                <option value="in_review">审批中</option>
+                                <option value="approved">已通过</option>
+                                <option value="rejected">已拒绝</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+    var prefix = ctx + "system/finance";
+    
+    // 从URL参数获取默认状态
+    function getUrlParam(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return decodeURIComponent(r[2]);
+        return null;
+    }
+    
+    var defaultStatus = getUrlParam("defaultStatus");
+
+    $(function () {
+        // 如果是融资审批页面（有defaultStatus参数），默认显示待审批的申请
+        if (defaultStatus) {
+            // 融资审批页面：默认显示"已提交"和"审批中"状态的申请
+            // 由于后端接口只支持单个状态筛选，我们默认显示"已提交"
+            // 用户可以通过下拉框切换到"审批中"或"所有"来查看其他状态
+            $('#status').val('submitted');
+        }
+        
+        var options = {
+            url: prefix + "/list",
+            queryParams: function (params) {
+                // 使用框架提供的formToJSON方法替代serializeObject
+                var search = $.common.formToJSON('finance-form');
+                // 如果有默认状态且用户没有选择其他状态，使用默认状态
+                params.status = search.status || (defaultStatus ? 'submitted' : '');
+                return params;
+            },
+            modalName: "融资申请",
+            columns: [
+                {checkbox: true},
+                {field: 'id', title: '编号', width: 80},
+                {field: 'farmerId', title: '农户ID', width: 100},
+                {field: 'productId', title: '产品ID', width: 100, formatter: function(value) { return value || '-'; }},
+                {field: 'amount', title: '金额（元）', width: 120, formatter: function(value) { return value ? parseFloat(value).toFixed(2) : '0.00'; }},
+                {field: 'termMonths', title: '期限（月）', width: 100},
+                {field: 'purpose', title: '用途', width: 200},
+                {
+                    field: 'status',
+                    title: '状态',
+                    align: 'center',
+                    width: 100,
+                    formatter: function (value) {
+                        if (value === 'submitted') return '<span class="label label-warning">已提交</span>';
+                        if (value === 'in_review') return '<span class="label label-info">审批中</span>';
+                        if (value === 'approved') return '<span class="label label-success">已通过</span>';
+                        if (value === 'rejected') return '<span class="label label-danger">已拒绝</span>';
+                        return value || '';
+                    }
+                },
+                {field: 'createdAt', title: '申请时间', width: 160, sortable: true},
+                {
+                    title: '操作',
+                    align: 'center',
+                    width: 180,
+                    formatter: function (value, row, index) {
+                        var actions = [];
+                        actions.push('<a class="btn btn-info btn-xs" href="javascript:void(0)" onclick="viewDetail(' + row.id + ')"><i class="fa fa-eye"></i> 审批/查看</a>');
+                        return actions.join('');
+                    }
+                }
+            ]
+        };
+        $.table.init(options);
+    });
+
+    function viewDetail(id) {
+        $.modal.openFull("审批融资申请", ctx + "guest/finance/review?id=" + id);
+    }
+</script>
+</body>
+</html>
+
+

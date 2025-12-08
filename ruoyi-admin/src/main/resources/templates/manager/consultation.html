@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>专家咨询回复</title>
+  <th:block th:include="include :: header('专家咨询回复')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    .consultation-page {
+      padding: 8px 0 0 0;
+    }
+
+    .consultation-toolbar {
+      margin-bottom: 6px;
+    }
+
+    #consultationContainer {
+      margin-top: 0;
+    }
+
+    .consultation-card {
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      background: #fff;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      transition: box-shadow 0.3s;
+    }
+
+    .consultation-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .consultation-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .consultation-card .consultation-content {
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.6;
+      max-height: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .consultation-card .consultation-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #999;
+    }
+
+    .consultation-card .consultation-actions {
+      margin-top: 12px;
+      text-align: right;
+    }
+
+    .consultation-card .badge {
+      font-size: 13px;
+      padding: 4px 8px;
+    }
+
+    .consultation-empty {
+      text-align: center;
+      padding: 60px 0;
+      color: #999;
+      background: #fff;
+      border: 1px dashed #d9d9d9;
+      border-radius: 4px;
+    }
+
+    .consultation-empty i {
+      font-size: 48px;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+
+    .status-pending {
+      background-color: #f0ad4e;
+      color: #fff;
+    }
+
+    .status-answered {
+      background-color: #5cb85c;
+      color: #fff;
+    }
+
+    .status-closed {
+      background-color: #999;
+      color: #fff;
+    }
+
+    .modal .form-group {
+      margin-bottom: 15px;
+    }
+
+    .modal .control-label {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="container-div consultation-page">
+  <div class="btn-group-sm consultation-toolbar">
+    <div class="btn-group">
+      <button type="button" class="btn btn-default" id="btnFilterAll">全部</button>
+      <button type="button" class="btn btn-default" id="btnFilterPending">待回复</button>
+      <button type="button" class="btn btn-default" id="btnFilterAnswered">已回复</button>
+      <button type="button" class="btn btn-default" id="btnFilterClosed">已关闭</button>
+    </div>
+  </div>
+  <div id="consultationContainer"></div>
+</div>
+
+<!-- 回复咨询模态框 -->
+<div class="modal fade" id="replyModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title">回复咨询</h4>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="replyConsultationId">
+        <div class="form-group">
+          <label class="control-label">咨询标题：</label>
+          <p id="replyTitle" style="font-weight: 600;"></p>
+        </div>
+        <div class="form-group">
+          <label class="control-label">咨询内容：</label>
+          <div id="replyQuestion" style="padding: 10px; background: #f5f5f5; border-radius: 4px;"></div>
+        </div>
+        <div class="form-group">
+          <label class="control-label is-required">回复内容：</label>
+          <textarea id="replyContent" class="form-control" rows="6" placeholder="请输入回复内容" maxlength="2000"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" id="btnSaveReply">提交回复</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+  var prefix = ctx + "system/consultation";
+  var currentFilter = 'pending';
+
+  $(function () {
+    updateFilterButtons();
+    loadConsultations();
+
+    $('#btnFilterAll').click(function () {
+      currentFilter = 'all';
+      updateFilterButtons();
+      loadConsultations();
+    });
+
+    $('#btnFilterPending').click(function () {
+      currentFilter = 'pending';
+      updateFilterButtons();
+      loadConsultations();
+    });
+
+    $('#btnFilterAnswered').click(function () {
+      currentFilter = 'answered';
+      updateFilterButtons();
+      loadConsultations();
+    });
+
+    $('#btnFilterClosed').click(function () {
+      currentFilter = 'closed';
+      updateFilterButtons();
+      loadConsultations();
+    });
+
+    $('#btnSaveReply').click(function () {
+      if (!$('#replyContent').val()) {
+        $.modal.alertWarning("请输入回复内容");
+        return;
+      }
+      saveReply();
+    });
+  });
+
+  // 加载当前专家相关的咨询列表
+  function loadConsultations() {
+    $.ajax({
+      url: prefix + "/expertList",
+      type: "POST",
+      data: {
+        status: currentFilter === 'all' ? '' : currentFilter
+      },
+      success: function (result) {
+        if (result.code === web_status.SUCCESS) {
+          renderConsultations(result.rows || []);
+        } else {
+          $.modal.alertError(result.msg || "加载咨询列表失败");
+        }
+      },
+      error: function () {
+        $.modal.alertError("加载咨询列表失败");
+      }
+    });
+  }
+
+  // 渲染咨询列表
+  function renderConsultations(consultations) {
+    var container = $('#consultationContainer');
+    container.empty();
+
+    if (!consultations || consultations.length === 0) {
+      container.html('<div class="consultation-empty"><i class="fa fa-inbox"></i><p>暂无相关咨询</p></div>');
+      return;
+    }
+
+    consultations.forEach(function (item) {
+      var statusClass = 'status-' + item.status;
+      var statusText = getStatusText(item.status);
+
+      var fullContent = (item.content || '').replace(/<[^>]*>/g, '');
+      var showContent = fullContent;
+      if (showContent.length > 100) {
+        showContent = showContent.substring(0, 100) + '...';
+      }
+
+      var cardHtml = '<div class="consultation-card" data-id="' + item.id + '">' +
+        '<h4>' + (item.title || '无标题') + '</h4>' +
+        '<div class="consultation-content">' + showContent + '</div>' +
+        '<div class="consultation-meta">' +
+        '<span><span class="badge ' + statusClass + '">' + statusText + '</span></span>' +
+        '<span>创建时间：' + (item.createTime || '') + '</span>' +
+        '</div>';
+
+      if (item.reply) {
+        var replyText = (item.reply || '').replace(/<[^>]*>/g, '');
+        if (replyText.length > 150) {
+          replyText = replyText.substring(0, 150) + '...';
+        }
+        cardHtml += '<div class="consultation-info" style="background: #f5f5f5; padding: 10px; border-radius: 4px; margin-top: 10px;">' +
+          '<strong>已回复：</strong><br>' +
+          '<div style="margin-top: 8px; color: #666;">' + replyText + '</div>' +
+          '<div style="margin-top: 8px; font-size: 12px; color: #999;">回复时间：' + (item.replyTime || '') + '</div>' +
+          '</div>';
+      }
+
+      cardHtml += '<div class="consultation-actions">';
+      if (item.status === 'pending') {
+        cardHtml += '<a href="javascript:void(0)" class="btn btn-primary btn-xs" ' +
+          'onclick="openReplyModal(' + item.id + ', \'' +
+          escapeJs(item.title || '无标题') + '\', \'' +
+          escapeJs(fullContent) + '\')"><i class="fa fa-edit"></i> 回复</a> ';
+      }
+      cardHtml += '</div></div>';
+
+      container.append(cardHtml);
+    });
+  }
+
+  // 打开回复弹窗
+  function openReplyModal(id, title, content) {
+    $('#replyConsultationId').val(id);
+    $('#replyTitle').text(title || '');
+    $('#replyQuestion').text(content || '');
+    $('#replyContent').val('');
+    $('#replyModal').modal('show');
+  }
+
+  // 提交回复
+  function saveReply() {
+    var id = $('#replyConsultationId').val();
+    var reply = $('#replyContent').val();
+
+    $.ajax({
+      url: prefix + "/reply",
+      type: "POST",
+      data: {
+        id: id,
+        reply: reply
+      },
+      success: function (result) {
+        if (result.code === web_status.SUCCESS) {
+          $.modal.msgSuccess("回复成功");
+          $('#replyModal').modal('hide');
+          loadConsultations();
+        } else {
+          $.modal.alertError(result.msg || "回复失败");
+        }
+      },
+      error: function () {
+        $.modal.alertError("回复失败");
+      }
+    });
+  }
+
+  // 获取状态文本
+  function getStatusText(status) {
+    var statusMap = {
+      'pending': '待回复',
+      'answered': '已回复',
+      'closed': '已关闭'
+    };
+    return statusMap[status] || status;
+  }
+
+  // 更新筛选按钮状态
+  function updateFilterButtons() {
+    $('.btn-group button').removeClass('active');
+    if (currentFilter === 'all') {
+      $('#btnFilterAll').addClass('active');
+    } else if (currentFilter === 'pending') {
+      $('#btnFilterPending').addClass('active');
+    } else if (currentFilter === 'answered') {
+      $('#btnFilterAnswered').addClass('active');
+    } else if (currentFilter === 'closed') {
+      $('#btnFilterClosed').addClass('active');
+    }
+  }
+
+  // 简单转义单引号，避免拼接到 HTML 属性时报错
+  function escapeJs(str) {
+    if (!str) return '';
+    return String(str).replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
+  }
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>专家入驻申请</title>
+  <th:block th:include="include :: header('专家入驻申请')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    .apply-page {
+      padding: 20px 0;
+    }
+
+    .apply-form {
+      background: #fff;
+      padding: 30px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form-group .is-required::before {
+      content: "*";
+      color: #f56c6c;
+      margin-right: 4px;
+    }
+
+    .help-text {
+      color: #999;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .status-info {
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .status-pending {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+    }
+
+    .status-approved {
+      background: #d4edda;
+      border: 1px solid #28a745;
+      color: #155724;
+    }
+
+    .status-rejected {
+      background: #f8d7da;
+      border: 1px solid #dc3545;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="container-div apply-page">
+  <div class="apply-form">
+    <h3 style="margin-bottom: 30px;">专家入驻申请</h3>
+    
+    <!-- 审核状态提示 -->
+    <div id="statusInfo" style="display: none;"></div>
+
+    <form id="expertApplyForm" class="form-horizontal">
+      <input type="hidden" id="id">
+      
+      <div class="form-group">
+        <label class="col-sm-2 control-label is-required">专业领域：</label>
+        <div class="col-sm-8">
+          <input type="text" class="form-control" id="specialty" placeholder="例如：农业种植、畜牧养殖、果树栽培等" required maxlength="100">
+          <span class="help-text">请填写您的专业领域</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label is-required">工作经验：</label>
+        <div class="col-sm-8">
+          <input type="text" class="form-control" id="experience" placeholder="例如：20年农业种植经验" required maxlength="200">
+          <span class="help-text">请简要描述您的工作经验</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label is-required">专家简介：</label>
+        <div class="col-sm-8">
+          <textarea class="form-control" id="description" rows="5" placeholder="请详细描述您的专业背景、擅长方向等" required maxlength="1000"></textarea>
+          <span class="help-text">请详细填写您的专业背景和简介，这将展示给农户查看</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">擅长方向：</label>
+        <div class="col-sm-8">
+          <textarea class="form-control" id="expertise" rows="3" placeholder="例如：水稻栽培、小麦种植、病虫害防治等（多个用逗号分隔）" maxlength="500"></textarea>
+          <span class="help-text">请填写您擅长的具体方向，多个用逗号分隔</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">主要成就：</label>
+        <div class="col-sm-8">
+          <textarea class="form-control" id="achievements" rows="3" placeholder="例如：获得XX奖项、发表XX论文、指导XX项目等" maxlength="500"></textarea>
+          <span class="help-text">请填写您的主要成就和荣誉（选填）</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">专家头像：</label>
+        <div class="col-sm-8">
+          <input type="text" class="form-control" id="avatar" placeholder="头像URL（选填）" maxlength="200">
+          <span class="help-text">请填写头像图片的URL地址（选填）</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-8">
+          <button type="button" class="btn btn-primary" id="btnSubmit">提交申请</button>
+          <button type="button" class="btn btn-default" id="btnReset" style="margin-left: 10px;">重置</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+  var prefix = ctx + "farmer/expert";
+
+  $(function() {
+    // 加载当前用户的专家信息
+    loadMyExpertInfo();
+    
+    // 提交申请
+    $('#btnSubmit').click(function() {
+      if (validateForm()) {
+        submitApply();
+      }
+    });
+
+    // 重置表单
+    $('#btnReset').click(function() {
+      resetForm();
+    });
+  });
+
+  // 加载当前用户的专家信息
+  function loadMyExpertInfo() {
+    $.ajax({
+      url: prefix + "/myInfo",
+      type: "GET",
+      success: function(result) {
+        if (result.code == web_status.SUCCESS && result.data) {
+          var expertInfo = result.data;
+          $('#id').val(expertInfo.id);
+          $('#specialty').val(expertInfo.specialty || '');
+          $('#experience').val(expertInfo.experience || '');
+          $('#description').val(expertInfo.description || '');
+          $('#expertise').val(expertInfo.expertise || '');
+          $('#achievements').val(expertInfo.achievements || '');
+          $('#avatar').val(expertInfo.avatar || '');
+          
+          // 显示审核状态
+          showAuditStatus(expertInfo.auditStatus, expertInfo.remark);
+          
+          // 如果已通过审核，可以更新信息
+          if (expertInfo.auditStatus === '1') {
+            $('#btnSubmit').text('更新信息');
+          }
+        }
+      },
+      error: function() {
+        // 如果没有专家信息，说明是首次申请
+      }
+    });
+  }
+
+  // 显示审核状态
+  function showAuditStatus(auditStatus, remark) {
+    var statusInfo = $('#statusInfo');
+    statusInfo.show();
+    
+    if (auditStatus === '0') {
+      statusInfo.removeClass().addClass('status-info status-pending');
+      statusInfo.html('<strong>审核状态：待审核</strong><br>您的申请已提交，请耐心等待平台审核。');
+    } else if (auditStatus === '1') {
+      statusInfo.removeClass().addClass('status-info status-approved');
+      statusInfo.html('<strong>审核状态：已通过</strong><br>恭喜！您的专家申请已通过审核，现在可以更新您的专家信息。');
+    } else if (auditStatus === '2') {
+      statusInfo.removeClass().addClass('status-info status-rejected');
+      var rejectReason = remark ? '<br>拒绝原因：' + remark : '';
+      statusInfo.html('<strong>审核状态：已拒绝</strong>' + rejectReason + '<br>您可以修改信息后重新提交申请。');
+    } else {
+      statusInfo.hide();
+    }
+  }
+
+  // 表单验证
+  function validateForm() {
+    if (!$('#specialty').val()) {
+      $.modal.alertWarning("请填写专业领域");
+      return false;
+    }
+    if (!$('#experience').val()) {
+      $.modal.alertWarning("请填写工作经验");
+      return false;
+    }
+    if (!$('#description').val()) {
+      $.modal.alertWarning("请填写专家简介");
+      return false;
+    }
+    return true;
+  }
+
+  // 提交申请
+  function submitApply() {
+    var expertId = $('#id').val();
+    var url = expertId ? prefix + "/updateMyInfo" : prefix + "/apply";
+    
+    var data = {
+      id: expertId,
+      specialty: $('#specialty').val(),
+      experience: $('#experience').val(),
+      description: $('#description').val(),
+      expertise: $('#expertise').val(),
+      achievements: $('#achievements').val(),
+      avatar: $('#avatar').val()
+    };
+
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: data,
+      success: function(result) {
+        if (result.code == web_status.SUCCESS) {
+          $.modal.msgSuccess(result.msg || "操作成功");
+          setTimeout(function() {
+            loadMyExpertInfo();
+          }, 1000);
+        } else {
+          $.modal.alertError(result.msg);
+        }
+      },
+      error: function() {
+        $.modal.alertError("操作失败");
+      }
+    });
+  }
+
+  // 重置表单
+  function resetForm() {
+    $('#expertApplyForm')[0].reset();
+    $('#id').val('');
+    $('#statusInfo').hide();
+    $('#btnSubmit').text('提交申请');
+  }
+</script>
+</body>
+</html>
+

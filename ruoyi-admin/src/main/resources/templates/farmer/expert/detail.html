@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>咨询详情</title>
+  <th:block th:include="include :: header('咨询详情')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    .detail-page {
+      padding: 20px;
+      background: #fff;
+    }
+
+    .detail-header {
+      border-bottom: 1px solid #e7eaec;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+
+    .detail-header h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .detail-meta {
+      color: #999;
+      font-size: 13px;
+    }
+
+    .detail-section {
+      margin-bottom: 25px;
+    }
+
+    .detail-section h4 {
+      margin-bottom: 12px;
+      color: #333;
+      font-size: 16px;
+      border-left: 3px solid #1ab394;
+      padding-left: 10px;
+    }
+
+    .detail-content {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      line-height: 1.8;
+      color: #666;
+      min-height: 100px;
+    }
+
+    .detail-reply {
+      background: #e8f5e9;
+      padding: 15px;
+      border-radius: 4px;
+      border-left: 3px solid #5cb85c;
+      margin-top: 15px;
+    }
+
+    .detail-reply-header {
+      font-weight: 600;
+      color: #5cb85c;
+      margin-bottom: 10px;
+    }
+
+    .detail-reply-content {
+      line-height: 1.8;
+      color: #666;
+    }
+
+    .detail-reply-time {
+      font-size: 12px;
+      color: #999;
+      margin-top: 10px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: normal;
+    }
+
+    .status-pending {
+      background-color: #f0ad4e;
+      color: #fff;
+    }
+
+    .status-answered {
+      background-color: #5cb85c;
+      color: #fff;
+    }
+
+    .status-closed {
+      background-color: #999;
+      color: #fff;
+    }
+
+    .detail-actions {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e7eaec;
+      text-align: right;
+    }
+  </style>
+</head>
+<body class="white-bg">
+<div class="detail-page">
+  <div class="detail-header">
+    <h3 id="consultationTitle">加载中...</h3>
+    <div class="detail-meta">
+      <span id="statusBadge" class="status-badge">加载中...</span>
+      <span style="margin-left: 15px;">创建时间：<span id="createTime">-</span></span>
+      <span style="margin-left: 15px;">创建者：<span id="createBy">-</span></span>
+    </div>
+  </div>
+
+  <div class="detail-section">
+    <h4>咨询内容</h4>
+    <div class="detail-content" id="consultationContent">加载中...</div>
+  </div>
+
+  <div class="detail-section" id="replySection" style="display: none;">
+    <h4>专家回复</h4>
+    <div class="detail-reply">
+      <div class="detail-reply-header">
+        <i class="fa fa-user-md"></i> 专家回复
+      </div>
+      <div class="detail-reply-content" id="replyContent"></div>
+      <div class="detail-reply-time">
+        回复时间：<span id="replyTime">-</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-actions">
+    <button type="button" class="btn btn-default" onclick="$.modal.closeAll()">关闭</button>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+  var prefix = ctx + "system/consultation";
+  var id = $.getUrlParam("id");
+
+  $(function() {
+    if (id) {
+      loadConsultationDetail(id);
+    } else {
+      $.modal.alertError("缺少咨询ID参数");
+    }
+  });
+
+  function loadConsultationDetail(id) {
+    $.get(prefix + "/detail/" + id, function(result) {
+      if (result.code == web_status.SUCCESS) {
+        var data = result.data;
+        
+        // 标题
+        $('#consultationTitle').text(data.title || '无标题');
+        
+        // 状态
+        var statusText = getStatusText(data.status);
+        var statusClass = 'status-' + data.status;
+        $('#statusBadge').text(statusText).attr('class', 'status-badge ' + statusClass);
+        
+        // 内容
+        $('#consultationContent').html(data.content || '无内容');
+        
+        // 创建信息（兼容 createdAt 和 createTime）
+        var createTime = data.createTime || data.createdAt || '-';
+        $('#createTime').text(createTime);
+        $('#createBy').text(data.createBy || '-');
+        
+        // 回复信息
+        if (data.reply) {
+          $('#replyContent').html(data.reply);
+          $('#replyTime').text(data.replyTime || '-');
+          $('#replySection').show();
+        }
+      } else {
+        $.modal.alertError(result.msg || "加载咨询详情失败");
+      }
+    }).fail(function(xhr, status, error) {
+      console.error("加载咨询详情失败:", status, error, xhr);
+      $.modal.alertError("加载咨询详情失败：" + (xhr.responseJSON ? xhr.responseJSON.msg : error));
+    });
+  }
+
+  function getStatusText(status) {
+    var statusMap = {
+      'pending': '待回复',
+      'answered': '已回复',
+      'closed': '已关闭'
+    };
+    return statusMap[status] || status;
+  }
+</script>
+</body>
+</html>
+

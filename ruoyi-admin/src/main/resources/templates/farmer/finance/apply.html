@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>融资申请</title>
+  <th:block th:include="include :: header('融资申请')" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="ibox">
+        <div class="ibox-title">
+          <h5>提交融资申请</h5>
+        </div>
+        <div class="ibox-content">
+          <form class="form-horizontal m" id="form-finance-apply">
+            <div class="form-group">
+              <label class="col-sm-2 control-label is-required">选择贷款产品：</label>
+              <div class="col-sm-8">
+                <input type="hidden" name="productId" id="productId" required>
+                <select class="form-control" id="productIdSelect" style="display: none;">
+                  <option value="">请选择贷款产品</option>
+                </select>
+                <p class="help-block" id="productSelectHint">请先选择贷款产品，系统将自动填充相关信息</p>
+                <div id="productInfo" style="margin-top: 10px; display: none;">
+                  <div class="alert alert-info">
+                    <strong>已选择产品：</strong>
+                    <div id="productDetails"></div>
+                    <div style="margin-top: 10px;">
+                      <a href="javascript:void(0)" onclick="changeProduct()" class="btn btn-sm btn-default">重新选择产品</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label is-required">申请金额（元）：</label>
+              <div class="col-sm-8">
+                <input type="number" class="form-control" name="amount" id="amount" min="0.01" step="0.01" required>
+                <p class="help-block" id="amountHint"></p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label is-required">贷款期限（月）：</label>
+              <div class="col-sm-8">
+                <input type="number" class="form-control" name="termMonths" id="termMonths" min="1" step="1" required>
+                <p class="help-block" id="termHint"></p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">贷款用途：</label>
+              <div class="col-sm-8">
+                <textarea class="form-control" name="purpose" id="purpose" rows="3"
+                          placeholder="例如：购买农机、扩大种植面积等" maxlength="255"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">抵押物说明：</label>
+              <div class="col-sm-8">
+                <textarea class="form-control" name="collateralDesc" id="collateralDesc" rows="3"
+                          placeholder="描述您的抵押物，如房产、农机设备等" maxlength="500"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">抵押物附件：</label>
+              <div class="col-sm-8">
+                <input id="collateralFiles" type="file" multiple>
+                <input type="hidden" id="attachmentUrls" name="attachmentUrls">
+                <input type="hidden" id="attachmentNames" name="attachmentNames">
+                <p class="help-block">可上传多张抵押物照片或相关证明文件。</p>
+                <ul id="uploadList" style="margin-top: 10px;"></ul>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-8">
+                <button type="button" class="btn btn-primary" onclick="submitFinance()">提交申请</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+  var prefix = ctx + "system/finance";
+  var productPrefix = ctx + "system/bank/product";
+
+  // 加载可用的贷款产品列表（用于下拉选择）
+  function loadProducts() {
+    $.ajax({
+      url: productPrefix + "/available",
+      type: "GET",
+      success: function(result) {
+        if (result.code == web_status.SUCCESS) {
+          var products = result.data;
+          var select = $('#productIdSelect');
+          select.empty();
+          select.append('<option value="">请选择贷款产品</option>');
+          $.each(products, function(i, product) {
+            select.append('<option value="' + product.id + '" data-product="' + 
+              JSON.stringify(product).replace(/"/g, '&quot;') + '">' + 
+              product.bankName + ' - ' + product.productName + 
+              ' (利率: ' + (product.interestRate || '面议') + '%)</option>');
+          });
+          select.show();
+          $('#productSelectHint').show();
+        }
+      }
+    });
+  }
+
+  // 产品选择变化事件（下拉选择时使用）
+  $('#productIdSelect').on('change', function() {
+    var option = $(this).find('option:selected');
+    if (option.val()) {
+      var product = JSON.parse(option.attr('data-product').replace(/&quot;/g, '"'));
+      $('#productId').val(product.id);
+      displayProductInfo(product);
+      $('#productIdSelect').hide();
+      $('#productInfo').show();
+    } else {
+      $('#productInfo').hide();
+      $('#amountHint').text('');
+      $('#termHint').text('');
+    }
+  });
+
+  // 重新选择产品
+  function changeProduct() {
+    $('#productId').val('');
+    $('#productInfo').hide();
+    $('#productIdSelect').show();
+    $('#amountHint').text('');
+    $('#termHint').text('');
+    $('#amount').val('');
+    $('#termMonths').val('');
+  }
+
+  // 显示产品信息
+  function displayProductInfo(product) {
+    var details = [];
+    details.push('<strong>' + (product.productName || '未命名产品') + '</strong>');
+    details.push('银行：' + (product.bankName || '未知银行'));
+    if (product.interestRate) {
+      details.push('年利率：' + product.interestRate + '%');
+    } else {
+      details.push('年利率：面议');
+    }
+    details.push('贷款额度：' + product.minAmount + ' - ' + product.maxAmount + ' 元');
+    details.push('贷款期限：' + product.minTermMonths + ' - ' + product.maxTermMonths + ' 个月');
+    if (product.description) {
+      details.push('产品描述：' + product.description);
+    }
+    if (product.requirements) {
+      details.push('申请条件：' + product.requirements);
+    }
+    
+    $('#productDetails').html(details.join('<br>'));
+    $('#productInfo').show();
+    $('#productSelectHint').hide();
+    
+    // 设置金额和期限的提示
+    $('#amountHint').text('该产品支持 ' + product.minAmount + ' - ' + product.maxAmount + ' 元');
+    $('#termHint').text('该产品支持 ' + product.minTermMonths + ' - ' + product.maxTermMonths + ' 个月');
+    
+    // 设置最小值和最大值
+    $('#amount').attr('min', product.minAmount);
+    $('#amount').attr('max', product.maxAmount);
+    $('#termMonths').attr('min', product.minTermMonths);
+    $('#termMonths').attr('max', product.maxTermMonths);
+  }
+
+  // 从URL参数获取产品ID
+  function getUrlParam(name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+    var r = window.location.search.substr(1).match(reg);
+    if (r != null) return decodeURIComponent(r[2]);
+    return null;
+  }
+
+  // 页面加载时获取产品列表
+  $(function() {
+    var productId = getUrlParam("productId");
+    if (productId) {
+      // 如果URL中有产品ID，直接加载该产品信息
+      loadProductById(productId);
+    } else {
+      // 否则加载产品列表（保留下拉选择功能作为备用）
+      loadProducts();
+    }
+  });
+
+  // 根据产品ID加载产品信息
+  function loadProductById(productId) {
+    $.ajax({
+      url: productPrefix + "/list",
+      type: "POST",
+      data: { id: productId },
+      success: function(result) {
+        if (result.code == web_status.SUCCESS && result.rows && result.rows.length > 0) {
+          var product = result.rows[0];
+          // 设置产品ID（隐藏字段）
+          $('#productId').val(product.id);
+          // 显示产品信息
+          displayProductInfo(product);
+          // 隐藏下拉选择框，显示已选产品信息
+          $('#productId').closest('.form-group').hide();
+          $('#productInfo').show();
+        } else {
+          $.modal.alertError("加载产品信息失败");
+          loadProducts(); // 失败时回退到下拉选择
+        }
+      },
+      error: function() {
+        $.modal.alertError("加载产品信息失败");
+        loadProducts(); // 失败时回退到下拉选择
+      }
+    });
+  }
+
+  // 处理文件选择并上传到 /common/upload
+  $('#collateralFiles').on('change', function () {
+    var files = this.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+    for (var i = 0; i < files.length; i++) {
+      uploadFile(files[i]);
+    }
+    // 清空 input，避免同一文件无法再次选择
+    this.value = '';
+  });
+
+  function uploadFile(file) {
+    var data = new FormData();
+    data.append("file", file);
+    $.ajax({
+      type: "POST",
+      url: ctx + "common/upload",
+      data: data,
+      cache: false,
+      contentType: false,
+      processData: false,
+      dataType: 'json',
+      success: function (result) {
+        if (result.code == web_status.SUCCESS) {
+          addAttachment(result.url, result.fileName);
+        } else {
+          $.modal.alertError(result.msg || "文件上传失败");
+        }
+      },
+      error: function () {
+        $.modal.alertWarning("文件上传失败");
+      }
+    });
+  }
+
+  function addAttachment(url, name) {
+    var urls = $('#attachmentUrls').val();
+    var names = $('#attachmentNames').val();
+    $('#attachmentUrls').val(urls ? (urls + ',' + url) : url);
+    $('#attachmentNames').val(names ? (names + ',' + name) : name);
+
+    var li = $('<li></li>').text(name + ' ').append(
+      $('<a href="javascript:void(0)">[移除]</a>').click(function () {
+        removeAttachment(url);
+        $(this).parent().remove();
+      })
+    );
+    $('#uploadList').append(li);
+  }
+
+  function removeAttachment(url) {
+    function removeFromList(str, target) {
+      if (!str) return '';
+      return str.split(',').filter(function (item) {
+        return item !== target;
+      }).join(',');
+    }
+
+    $('#attachmentUrls').val(removeFromList($('#attachmentUrls').val(), url));
+    // 名称简单不处理同步删除，保持展示为主；真正删除只影响后端不再新传
+  }
+
+  function submitFinance() {
+    if (!$('#productId').val()) {
+      $.modal.alertWarning("请选择贷款产品");
+      return;
+    }
+    if (!$('#amount').val()) {
+      $.modal.alertWarning("请输入申请金额");
+      return;
+    }
+    if (!$('#termMonths').val()) {
+      $.modal.alertWarning("请输入贷款期限（月）");
+      return;
+    }
+    var data = $('#form-finance-apply').serialize();
+    $.ajax({
+      url: prefix + "/apply",
+      type: "POST",
+      data: data,
+      success: function (result) {
+        if (result.code == web_status.SUCCESS) {
+          $.modal.msgSuccess("提交成功");
+          $('#form-finance-apply')[0].reset();
+          $('#attachmentUrls').val('');
+          $('#attachmentNames').val('');
+          $('#uploadList').empty();
+        } else {
+          $.modal.alertError(result.msg || "提交失败");
+        }
+      },
+      error: function () {
+        $.modal.alertError("提交失败");
+      }
+    });
+  }
+</script>
+</body>
+</html>

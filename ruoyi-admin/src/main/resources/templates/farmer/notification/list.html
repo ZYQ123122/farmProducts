@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>通知中心</title>
+    <th:block th:include="include :: header('通知中心')" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5>我的通知</h5>
+                    <div class="ibox-tools">
+                        <a class="btn btn-primary btn-xs" onclick="markAllRead()"><i class="fa fa-check"></i> 全部标记为已读</a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div id="notificationList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+    var prefix = ctx + "system/notification";
+
+    function loadNotifications() {
+        $.ajax({
+            url: prefix + "/list",
+            type: "POST",
+            success: function(result) {
+                if (result.code == web_status.SUCCESS) {
+                    renderNotifications(result.rows || []);
+                } else {
+                    $('#notificationList').html('<p class="text-danger">加载失败：' + (result.msg || '未知错误') + '</p>');
+                }
+            },
+            error: function() {
+                $('#notificationList').html('<p class="text-danger">加载失败</p>');
+            }
+        });
+    }
+
+    function renderNotifications(notifications) {
+        var html = '';
+        if (!notifications || notifications.length === 0) {
+            html = '<div class="text-center" style="padding: 40px; color: #999;">暂无通知</div>';
+        } else {
+            notifications.forEach(function(notif) {
+                var readClass = notif.isRead === '1' ? '' : 'unread';
+                var readBadge = notif.isRead === '1' ? '' : '<span class="label label-danger">未读</span>';
+                html += '<div class="notification-item ' + readClass + '" style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="markAsRead(' + notif.id + ')">';
+                html += '<div style="display: flex; justify-content: space-between;">';
+                html += '<div style="flex: 1;">';
+                html += '<h5 style="margin: 0 0 5px 0;">' + readBadge + ' ' + (notif.title || '') + '</h5>';
+                html += '<p style="color: #666; margin: 5px 0;">' + (notif.content || '') + '</p>';
+                html += '<small style="color: #999;">' + (notif.createTime || '') + '</small>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+        }
+        $('#notificationList').html(html);
+    }
+
+    function markAsRead(id) {
+        $.ajax({
+            url: prefix + "/read",
+            type: "POST",
+            data: {id: id},
+            success: function(result) {
+                if (result.code == web_status.SUCCESS) {
+                    loadNotifications();
+                    loadUnreadCount();
+                }
+            }
+        });
+    }
+
+    function markAllRead() {
+        $.modal.confirm("确认将所有通知标记为已读吗？", function() {
+            $.ajax({
+                url: prefix + "/readAll",
+                type: "POST",
+                success: function(result) {
+                    if (result.code == web_status.SUCCESS) {
+                        $.modal.msgSuccess("操作成功");
+                        loadNotifications();
+                        loadUnreadCount();
+                    } else {
+                        $.modal.alertError(result.msg || "操作失败");
+                    }
+                }
+            });
+        });
+    }
+
+    function loadUnreadCount() {
+        $.ajax({
+            url: prefix + "/unreadCount",
+            type: "GET",
+            success: function(result) {
+                if (result.code == web_status.SUCCESS) {
+                    var count = result.data || 0;
+                    // 更新页面上的未读数量显示（如果有的话）
+                    $('.notification-count').text(count);
+                }
+            }
+        });
+    }
+
+    $(function() {
+        loadNotifications();
+        loadUnreadCount();
+        // 每30秒刷新一次未读数量
+        setInterval(loadUnreadCount, 30000);
+    });
+</script>
+<style>
+    .notification-item.unread {
+        background-color: #f0f8ff;
+        font-weight: bold;
+    }
+    .notification-item:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+</body>
+</html>
+

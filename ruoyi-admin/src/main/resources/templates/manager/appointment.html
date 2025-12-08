@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>预约处理</title>
+  <th:block th:include="include :: header('预约处理')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    .appointment-page { padding: 8px 0 0 0; }
+    .appointment-toolbar { margin-bottom: 6px; }
+    #appointmentContainer { margin-top: 0; }
+    .appointment-card {
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      background: #fff;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      transition: box-shadow 0.3s;
+    }
+    .appointment-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .appointment-card h4 { margin: 0 0 8px 0; font-size: 18px; color: #333; }
+    .appointment-card .appointment-content { color: #666; margin: 6px 0; }
+    .appointment-card .appointment-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #999;
+      margin-top: 8px;
+    }
+    .appointment-card .appointment-actions { margin-top: 10px; text-align: right; }
+    .appointment-empty {
+      text-align: center;
+      padding: 60px 0;
+      color: #999;
+      background: #fff;
+      border: 1px dashed #d9d9d9;
+      border-radius: 4px;
+    }
+    .badge-status {
+      padding: 4px 8px;
+      border-radius: 3px;
+      color: #fff;
+      font-size: 12px;
+    }
+    .status-pending { background-color: #f0ad4e; }
+    .status-accepted { background-color: #5cb85c; }
+    .status-rejected { background-color: #d9534f; }
+    .status-cancelled { background-color: #999; }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="container-div appointment-page">
+  <div class="btn-group-sm appointment-toolbar">
+    <div class="btn-group">
+      <button type="button" class="btn btn-default" id="btnFilterAll">全部</button>
+      <button type="button" class="btn btn-default" id="btnFilterPending">待处理</button>
+      <button type="button" class="btn btn-default" id="btnFilterAccepted">已接受</button>
+      <button type="button" class="btn btn-default" id="btnFilterRejected">已拒绝</button>
+      <button type="button" class="btn btn-default" id="btnFilterCancelled">已取消</button>
+    </div>
+  </div>
+  <div id="appointmentContainer"></div>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+  // 立即输出调试信息，不依赖任何库
+  console.log("=== 预约处理页面脚本开始执行 ===");
+  
+  // 确保 ctx 已定义（ctx 应该在 footer 中已定义）
+  if (typeof ctx === 'undefined') {
+    var ctx = /*[[@{/}]]*/ '/';
+    console.log("ctx 未定义，使用默认值:", ctx);
+  } else {
+    console.log("ctx 已定义:", ctx);
+  }
+  
+  var prefix = ctx + "system/appointment";
+  var currentFilter = 'all';  // 默认显示全部
+  console.log("prefix:", prefix, "currentFilter:", currentFilter);
+
+  // 检查 jQuery 是否加载
+  if (typeof jQuery === 'undefined' && typeof $ === 'undefined') {
+    console.error("jQuery 未加载！");
+  } else {
+    console.log("jQuery 已加载，版本:", typeof jQuery !== 'undefined' ? jQuery.fn.jquery : '未知');
+  }
+
+  $(function () {
+    console.log("=== jQuery ready 事件触发 ===");
+    console.log("页面加载完成，开始初始化预约处理页面");
+    console.log("ctx:", ctx, "prefix:", prefix);
+    
+    try {
+      updateFilterButtons();
+      loadAppointments();
+
+      $('#btnFilterAll').click(function () { currentFilter = 'all'; updateFilterButtons(); loadAppointments(); });
+      $('#btnFilterPending').click(function () { currentFilter = 'pending'; updateFilterButtons(); loadAppointments(); });
+      $('#btnFilterAccepted').click(function () { currentFilter = 'accepted'; updateFilterButtons(); loadAppointments(); });
+      $('#btnFilterRejected').click(function () { currentFilter = 'rejected'; updateFilterButtons(); loadAppointments(); });
+      $('#btnFilterCancelled').click(function () { currentFilter = 'cancelled'; updateFilterButtons(); loadAppointments(); });
+    } catch (e) {
+      console.error("初始化预约处理页面时出错:", e);
+      console.error("错误堆栈:", e.stack);
+    }
+  });
+  
+  // 如果 jQuery 未加载，延迟执行
+  if (typeof jQuery === 'undefined' && typeof $ === 'undefined') {
+    console.warn("等待 jQuery 加载...");
+    window.addEventListener('load', function() {
+      console.log("页面完全加载，但 jQuery 仍未加载");
+    });
+  }
+
+  function loadAppointments() {
+    var requestUrl = prefix + "/expertList";
+    var requestData = {
+      status: currentFilter === 'all' ? '' : currentFilter
+    };
+    console.log("准备调用接口:", requestUrl, "参数:", requestData);
+    
+    $.ajax({
+      url: requestUrl,
+      type: "POST",
+      data: requestData,
+      success: function (result) {
+        console.log("预约列表接口返回:", result);
+        // 兼容不同的返回格式
+        if ((result.code === web_status.SUCCESS) || (result.code === 0) || (result.code == 0)) {
+          var data = result.data || result.rows || [];
+          console.log("预约数据:", data, "数量:", data.length);
+          if (Array.isArray(data)) {
+            renderAppointments(data);
+          } else {
+            console.error("数据格式错误，不是数组:", data);
+            renderAppointments([]);
+          }
+        } else {
+          console.error("接口返回错误:", result);
+          $.modal.alertError(result.msg || "加载预约列表失败");
+          renderAppointments([]);
+        }
+      },
+      error: function (xhr, status, error) {
+        console.error("接口调用失败:", status, error);
+        $.modal.alertError("加载预约列表失败");
+        renderAppointments([]);
+      }
+    });
+  }
+
+  function renderAppointments(list) {
+    var container = $('#appointmentContainer');
+    container.empty();
+
+    console.log("开始渲染预约列表，数据:", list, "数量:", list ? list.length : 0);
+
+    if (!list || list.length === 0) {
+      container.html('<div class="appointment-empty"><i class="fa fa-calendar"></i><p>暂无预约记录</p></div>');
+      return;
+    }
+
+    list.forEach(function (item) {
+      console.log("渲染预约项:", item);
+      var statusTextMap = {
+        'pending': '待处理',
+        'accepted': '已接受',
+        'rejected': '已拒绝',
+        'cancelled': '已取消'
+      };
+      var statusClassMap = {
+        'pending': 'status-pending',
+        'accepted': 'status-accepted',
+        'rejected': 'status-rejected',
+        'cancelled': 'status-cancelled'
+      };
+      var statusText = statusTextMap[item.status] || item.status;
+      var statusClass = statusClassMap[item.status] || 'status-pending';
+
+      // 处理日期格式
+      var time = '';
+      if (item.appointmentTime) {
+        if (typeof item.appointmentTime === 'string') {
+          time = item.appointmentTime;
+        } else if (item.appointmentTime instanceof Date) {
+          time = item.appointmentTime.toLocaleString('zh-CN');
+        } else {
+          time = String(item.appointmentTime);
+        }
+        // 如果包含时间戳，转换为日期字符串
+        if (time.length > 19) {
+          time = time.substring(0, 19);
+        }
+      }
+      
+      var createTime = '';
+      if (item.createdAt) {
+        if (typeof item.createdAt === 'string') {
+          createTime = item.createdAt;
+        } else if (item.createdAt instanceof Date) {
+          createTime = item.createdAt.toLocaleString('zh-CN');
+        } else {
+          createTime = String(item.createdAt);
+        }
+        if (createTime.length > 19) {
+          createTime = createTime.substring(0, 19);
+        }
+      } else if (item.created_at) {
+        createTime = item.created_at;
+        if (createTime.length > 19) {
+          createTime = createTime.substring(0, 19);
+        }
+      }
+
+      var note = item.note || '';
+      if (note.length > 80) {
+        note = note.substring(0, 80) + '...';
+      }
+
+      var contact = item.contactPhone || '';
+
+      var userName = item.userName || '未知用户';
+      var cardHtml = '<div class="appointment-card" data-id="' + item.id + '">' +
+        '<h4>预约者：' + userName + ' <span style="font-size: 14px; color: #666; font-weight: normal;">| 预约时间：' + time + '</span></h4>' +
+        '<div class="appointment-content"><strong>说明：</strong>' + (note || '无') + '</div>' +
+        '<div class="appointment-content"><strong>联系方式：</strong>' + (contact || '未填写') + '</div>' +
+        '<div class="appointment-meta">' +
+        '<span><span class="badge-status ' + statusClass + '">' + statusText + '</span></span>' +
+        '<span>创建时间：' + (createTime || '') + '</span>' +
+        '</div>' +
+        '<div class="appointment-actions">';
+
+      if (item.status === 'pending') {
+        cardHtml += '<button class="btn btn-success btn-xs" onclick="handleAppointment(' + item.id + ',\'accept\')"><i class="fa fa-check"></i> 接受</button> ';
+        cardHtml += '<button class="btn btn-danger btn-xs" onclick="handleAppointment(' + item.id + ',\'reject\')"><i class="fa fa-times"></i> 拒绝</button>';
+      }
+
+      cardHtml += '</div></div>';
+
+      container.append(cardHtml);
+    });
+  }
+
+  function handleAppointment(id, action) {
+    var msg = action === 'accept' ? '确定接受该预约吗？' : '确定拒绝该预约吗？';
+    $.modal.confirm(msg, function () {
+      $.ajax({
+        url: prefix + "/handle",
+        type: "POST",
+        data: { id: id, action: action },
+        success: function (result) {
+          if (result.code === web_status.SUCCESS) {
+            $.modal.msgSuccess("操作成功");
+            loadAppointments();
+          } else {
+            $.modal.alertError(result.msg || "操作失败");
+          }
+        },
+        error: function () {
+          $.modal.alertError("操作失败");
+        }
+      });
+    });
+  }
+
+  function updateFilterButtons() {
+    $('.btn-group button').removeClass('active');
+    if (currentFilter === 'all') $('#btnFilterAll').addClass('active');
+    else if (currentFilter === 'pending') $('#btnFilterPending').addClass('active');
+    else if (currentFilter === 'accepted') $('#btnFilterAccepted').addClass('active');
+    else if (currentFilter === 'rejected') $('#btnFilterRejected').addClass('active');
+    else if (currentFilter === 'cancelled') $('#btnFilterCancelled').addClass('active');
+  }
+</script>
+</body>
+</html>
+
+

@@ -37,6 +37,26 @@ public class SysLoginController extends BaseController
     @Autowired
     private ConfigService configService;
 
+<<<<<<< Updated upstream
+=======
+    @Autowired
+    private ISysLogininforService logininforService;
+
+    /**
+     * 角色到重定向路径的映射
+     */
+    private static final Map<String, String> ROLE_REDIRECT_MAP = new HashMap<>();
+    static {
+        ROLE_REDIRECT_MAP.put("farmer", "/farmer/index");
+        // 专家登录后进入系统主界面，由左侧菜单进入“专家工作台”
+        ROLE_REDIRECT_MAP.put("expert", "/index");
+        // 银行登录也进入主框架，由左侧菜单进入银行相关页面（如融资管理）
+        ROLE_REDIRECT_MAP.put("bank", "/index");
+        ROLE_REDIRECT_MAP.put("buyer", "/user/index");
+        ROLE_REDIRECT_MAP.put("admin", "/index");
+    }
+
+>>>>>>> Stashed changes
     @GetMapping("/login")
     public String login(HttpServletRequest request, HttpServletResponse response, ModelMap mmap)
     {

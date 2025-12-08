@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>融资记录</title>
+  <th:block th:include="include :: header('融资记录')" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="ibox">
+        <div class="ibox-title">
+          <h5>我的融资申请记录</h5>
+        </div>
+        <div class="ibox-content">
+          <div class="btn-group-sm" id="toolbar" role="group">
+            <button class="btn btn-default" onclick="reload('')">全部</button>
+            <button class="btn btn-warning" onclick="reload('submitted')">已提交</button>
+            <button class="btn btn-info" onclick="reload('in_review')">审批中</button>
+            <button class="btn btn-success" onclick="reload('approved')">已通过</button>
+            <button class="btn btn-danger" onclick="reload('rejected')">已拒绝</button>
+          </div>
+          <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+  var prefix = ctx + "system/finance";
+
+  $(function () {
+    initTable();
+  });
+
+  function initTable(status) {
+    var options = {
+      url: prefix + "/myList",
+      queryParams: function (params) {
+        var query = params;
+        if (status) {
+          query.status = status;
+        }
+        return query;
+      },
+      modalName: "融资申请",
+      columns: [
+        { field: 'id', title: '编号', width: 80 },
+        { field: 'amount', title: '金额（元）', width: 120, formatter: function(value) { return value ? parseFloat(value).toFixed(2) : '0.00'; }},
+        { field: 'termMonths', title: '期限（月）', width: 100 },
+        { field: 'purpose', title: '用途', width: 200 },
+        {
+          field: 'status',
+          title: '状态',
+          align: 'center',
+          width: 100,
+          formatter: function (value) {
+            if (value === 'submitted') return '<span class="label label-warning">已提交</span>';
+            if (value === 'in_review') return '<span class="label label-info">审批中</span>';
+            if (value === 'approved') return '<span class="label label-success">已通过</span>';
+            if (value === 'rejected') return '<span class="label label-danger">已拒绝</span>';
+            return value || '';
+          }
+        },
+        { field: 'createdAt', title: '申请时间', width: 160, sortable: true },
+        { field: 'bankComment', title: '审批意见', width: 200 }
+      ]
+    };
+    $.table.init(options);
+  }
+
+  function reload(status) {
+    $("#bootstrap-table").bootstrapTable('destroy');
+    initTable(status || '');
+  }
+</script>
+</body>
+</html>
+

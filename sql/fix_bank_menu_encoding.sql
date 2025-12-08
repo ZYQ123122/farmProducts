@@ -1,0 +1,6 @@
+-- 使用十六进制编码修复银行端菜单名称
+UPDATE sys_menu SET menu_name = UNHEX('E993B6E8A18CE5B7A5E4BD9CE58FB0') WHERE menu_id = 2200;
+UPDATE sys_menu SET menu_name = UNHEX('E89E8DE8B584E5AEA1E689B9') WHERE menu_id = 2201;
+UPDATE sys_menu SET menu_name = UNHEX('E89E8DE8B584E7AEA1E79086') WHERE menu_id = 2202;
+UPDATE sys_menu SET menu_name = UNHEX('E4BAA7E59381E7AEA1E79086') WHERE menu_id = 2203;
+

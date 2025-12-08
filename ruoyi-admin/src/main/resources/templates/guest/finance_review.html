@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>审批融资申请</title>
+    <th:block th:include="include :: header('审批融资申请')" />
+</head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <div id="detailContainer">
+        <p>加载中...</p>
+    </div>
+    <hr/>
+    <form class="form-horizontal m" id="form-review">
+        <div class="form-group">
+            <label class="col-sm-2 control-label">审批结果：</label>
+            <div class="col-sm-8">
+                <label class="radio-inline">
+                    <input type="radio" name="decision" value="approve"> 通过
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" name="decision" value="reject"> 拒绝
+                </label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">审批意见：</label>
+            <div class="col-sm-8">
+                <textarea class="form-control" name="bankComment" id="bankComment" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-8">
+                <button type="button" class="btn btn-primary" onclick="submitReview()">提交</button>
+                <button type="button" class="btn btn-default" onclick="$.modal.close()">关闭</button>
+            </div>
+        </div>
+    </form>
+</div>
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+    var prefix = ctx + "system/finance";
+    
+    // 获取URL参数 - 支持多种方式
+    function getUrlParam(name) {
+        // 方式1: 从URL查询字符串获取
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return decodeURIComponent(r[2]);
+        
+        // 方式2: 从hash中获取
+        var hash = window.location.hash;
+        if (hash) {
+            var hashParams = hash.substring(1).split('&');
+            for (var i = 0; i < hashParams.length; i++) {
+                var param = hashParams[i].split('=');
+                if (param[0] === name) {
+                    return decodeURIComponent(param[1]);
+                }
+            }
+        }
+        
+        // 方式3: 从Thymeleaf参数获取
+        var thymeleafId = [[${param.id != null ? param.id : 'null'}]];
+        if (thymeleafId && thymeleafId !== 'null') {
+            return thymeleafId;
+        }
+        
+        return null;
+    }
+    
+    var appId = getUrlParam("id");
+
+    $(function () {
+        // 如果还是没有获取到，尝试从父窗口获取
+        if (!appId || appId === 'null' || appId === null) {
+            try {
+                if (parent && parent.window && parent.window.location) {
+                    var parentUrl = parent.window.location.href;
+                    var match = parentUrl.match(/[?&]id=(\d+)/);
+                    if (match) {
+                        appId = match[1];
+                    }
+                }
+            } catch(e) {
+                // 跨域限制，忽略
+            }
+        }
+        
+        if (!appId || appId === 'null' || appId === null) {
+            $('#detailContainer').html('<div class="alert alert-danger"><strong>参数错误：</strong>缺少申请ID，请从申请列表页面点击"审批/查看"按钮进入。</div>');
+            $('#form-review').hide();
+            return;
+        }
+        loadDetail();
+    });
+
+    function loadDetail() {
+        $.ajax({
+            url: prefix + "/detail",
+            type: "GET",
+            data: {id: appId},
+            success: function (result) {
+                if (result.code == web_status.SUCCESS) {
+                    renderDetail(result.data, result.collateralList || [], result.product || null);
+                } else {
+                    $('#detailContainer').html('<div class="alert alert-danger"><strong>错误：</strong>' + (result.msg || '加载失败') + '</div>');
+                    $('#form-review').hide();
+                }
+            },
+            error: function (xhr, status, error) {
+                $('#detailContainer').html('<div class="alert alert-danger"><strong>加载失败：</strong>' + error + '</div>');
+                $('#form-review').hide();
+            }
+        });
+    }
+
+    function renderDetail(app, collateralList, product) {
+        var html = '<div class="ibox">';
+        html += '<div class="ibox-title"><h5>申请详情</h5></div>';
+        html += '<div class="ibox-content">';
+        html += '<table class="table table-bordered">';
+        html += '<tr><td style="width: 150px;"><strong>申请编号</strong></td><td>' + (app.id || '') + '</td></tr>';
+        html += '<tr><td><strong>农户ID</strong></td><td>' + (app.farmerId || '') + '</td></tr>';
+        
+        // 显示产品信息
+        if (product) {
+            html += '<tr><td><strong>选择的贷款产品</strong></td><td>';
+            html += '<strong>' + (product.productName || '') + '</strong>';
+            if (product.bankName) {
+                html += '（' + product.bankName + '）';
+            }
+            html += '</td></tr>';
+            if (product.interestRate) {
+                html += '<tr><td><strong>产品利率</strong></td><td>' + product.interestRate + '%</td></tr>';
+            }
+        } else if (app.productId) {
+            html += '<tr><td><strong>选择的贷款产品ID</strong></td><td>' + app.productId + '</td></tr>';
+        }
+        
+        if (app.bankId) {
+            html += '<tr><td><strong>所属银行ID</strong></td><td>' + app.bankId + '</td></tr>';
+        }
+        html += '<tr><td><strong>申请金额（元）</strong></td><td><strong style="color: #1ab394; font-size: 16px;">' + (app.amount ? parseFloat(app.amount).toFixed(2) : '0.00') + '</strong></td></tr>';
+        html += '<tr><td><strong>贷款期限（月）</strong></td><td>' + (app.termMonths || '') + '</td></tr>';
+        html += '<tr><td><strong>贷款用途</strong></td><td>' + (app.purpose || '') + '</td></tr>';
+        html += '<tr><td><strong>抵押物说明</strong></td><td>' + (app.collateralDesc || '') + '</td></tr>';
+        var statusText = '';
+        if (app.status === 'submitted') statusText = '<span class="label label-warning">已提交</span>';
+        else if (app.status === 'in_review') statusText = '<span class="label label-info">审批中</span>';
+        else if (app.status === 'approved') statusText = '<span class="label label-success">已通过</span>';
+        else if (app.status === 'rejected') statusText = '<span class="label label-danger">已拒绝</span>';
+        else statusText = app.status || '';
+        html += '<tr><td><strong>当前状态</strong></td><td>' + statusText + '</td></tr>';
+        if (app.createdAt) {
+            html += '<tr><td><strong>申请时间</strong></td><td>' + app.createdAt + '</td></tr>';
+        }
+        html += '</table>';
+
+        if (collateralList && collateralList.length > 0) {
+            html += '<div style="margin-top: 20px;"><strong>抵押物附件：</strong></div>';
+            html += '<div style="margin-top: 10px;">';
+            collateralList.forEach(function (c) {
+                var fileName = c.fileName || c.fileUrl || '未命名文件';
+                var fileExt = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+                var icon = 'fa-file';
+                if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].indexOf(fileExt) >= 0) {
+                    icon = 'fa-file-image-o';
+                } else if (['pdf'].indexOf(fileExt) >= 0) {
+                    icon = 'fa-file-pdf-o';
+                } else if (['doc', 'docx'].indexOf(fileExt) >= 0) {
+                    icon = 'fa-file-word-o';
+                }
+                html += '<a href="' + c.fileUrl + '" target="_blank" class="btn btn-sm btn-default" style="margin-right: 10px; margin-bottom: 5px;">';
+                html += '<i class="fa ' + icon + '"></i> ' + fileName;
+                html += '</a>';
+            });
+            html += '</div>';
+        } else {
+            html += '<div style="margin-top: 20px; color: #999;">暂无抵押物附件</div>';
+        }
+
+        if (app.bankComment) {
+            html += '<div style="margin-top: 20px; padding: 10px; background-color: #f5f5f5; border-radius: 4px;">';
+            html += '<strong>历史审批意见：</strong><br/>';
+            html += '<p style="margin-top: 5px;">' + app.bankComment + '</p>';
+            html += '</div>';
+        }
+        html += '</div></div>';
+        $('#detailContainer').html(html);
+    }
+
+    function submitReview() {
+        if (!appId || appId === 'null' || appId === null) {
+            $.modal.alertError("参数错误：缺少申请ID");
+            return;
+        }
+        var decision = $('input[name="decision"]:checked').val();
+        if (!decision) {
+            $.modal.alertWarning("请选择审批结果");
+            return;
+        }
+        var data = {
+            id: appId,
+            decision: decision,
+            bankComment: $('#bankComment').val()
+        };
+        $.ajax({
+            url: prefix + "/review",
+            type: "POST",
+            data: data,
+            success: function (result) {
+                if (result.code == web_status.SUCCESS) {
+                    $.modal.msgSuccess("审批成功");
+                    setTimeout(function() {
+                        $.modal.close();
+                        if (parent && parent.$.table) {
+                            parent.$.table.refresh();
+                        }
+                    }, 1000);
+                } else {
+                    $.modal.alertError(result.msg || "审批失败");
+                }
+            },
+            error: function (xhr, status, error) {
+                $.modal.alertError("审批失败：" + error);
+            }
+        });
+    }
+</script>
+</body>
+</html>
+
+
