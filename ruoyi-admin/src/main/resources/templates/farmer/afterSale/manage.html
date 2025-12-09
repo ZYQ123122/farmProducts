@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('售后管理')" />
+</head>
+<body class="gray-bg">
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="ibox">
+        <div class="ibox-title">
+            <h5>售后管理</h5>
+        </div>
+        <div class="ibox-content">
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#afterSaleTab" aria-controls="afterSaleTab" role="tab" data-toggle="tab">售后管理</a>
+                </li>
+                <li role="presentation">
+                    <a href="#reviewTab" aria-controls="reviewTab" role="tab" data-toggle="tab">查看评价</a>
+                </li>
+            </ul>
+            <div class="tab-content" style="padding-top: 20px;">
+                <div role="tabpanel" class="tab-pane active" id="afterSaleTab">
+                    <div class="alert alert-info">
+                        查看买家提交的退货申请，您可以点击"接受"或"拒绝"来处理申请。
+                    </div>
+                    <table class="table table-bordered" id="afterSaleTable">
+                <thead>
+                <tr>
+                    <th>售后ID</th>
+                    <th>订单ID</th>
+                    <th>买家ID</th>
+                    <th>买家名称</th>
+                    <th>商品名称</th>
+                    <th>退货理由</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th class="text-center">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td colspan="9" class="text-center text-muted">正在加载售后信息...</td>
+                </tr>
+                </tbody>
+                    </table>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="reviewTab">
+                    <div class="alert alert-info">
+                        查看买家对已完成订单的评价。
+                    </div>
+                    <table class="table table-bordered" id="reviewTable">
+                        <thead>
+                        <tr>
+                            <th>评价ID</th>
+                            <th>订单ID</th>
+                            <th>买家ID</th>
+                            <th>买家名称</th>
+                            <th>商品名称</th>
+                            <th>评分</th>
+                            <th>评价内容</th>
+                            <th>评价时间</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">正在加载评价信息...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:include="include :: footer" />
+
+<script th:inline="javascript">
+    var ctx = [[@{/}]];
+    var afterSaleApiPrefix = ctx + "api/afterSale";
+    var reviewApiPrefix = ctx + "api/review";
+
+    function escapeHtml(text) {
+        if (text === undefined || text === null) {
+            return '';
+        }
+        return $('<div/>').text(text).html();
+    }
+
+    function formatAfterSaleStatus(status) {
+        switch (status) {
+            case 'pending':
+                return '<span class="label label-warning">待处理</span>';
+            case 'resolved':
+                return '<span class="label label-success">已解决</span>';
+            default:
+                return status || '-';
+        }
+    }
+
+    function formatDateTime(dateStr) {
+        if (!dateStr) return '-';
+        var date = new Date(dateStr);
+        return date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0') + ' ' +
+               String(date.getHours()).padStart(2, '0') + ':' + 
+               String(date.getMinutes()).padStart(2, '0');
+    }
+
+    // 加载售后列表
+    function loadAfterSales() {
+        $.ajax({
+            url: afterSaleApiPrefix + '/farmer/list',
+            type: 'GET',
+            success: function(result) {
+                if (result.code == 0) {
+                    renderAfterSales(result.data);
+                } else {
+                    $('#afterSaleTable tbody').html('<tr><td colspan="9" class="text-center text-danger">' + result.msg + '</td></tr>');
+                }
+            },
+            error: function() {
+                $('#afterSaleTable tbody').html('<tr><td colspan="9" class="text-center text-danger">加载售后信息失败</td></tr>');
+            }
+        });
+    }
+
+    // 渲染售后列表
+    function renderAfterSales(afterSales) {
+        var tbody = $('#afterSaleTable tbody');
+        tbody.empty();
+        if (!afterSales || afterSales.length === 0) {
+            tbody.append('<tr><td colspan="9" class="text-center text-muted">暂无售后申请</td></tr>');
+            return;
+        }
+        afterSales.forEach(function (item) {
+            var row = $('<tr></tr>');
+            row.append('<td>' + escapeHtml(item.id) + '</td>');
+            row.append('<td>' + escapeHtml(item.orderId) + '</td>');
+            row.append('<td>' + escapeHtml(item.buyerId) + '</td>');
+            row.append('<td>' + escapeHtml(item.buyerName || '') + '</td>');
+            row.append('<td>' + escapeHtml(item.productName || '') + '</td>');
+            row.append('<td>' + escapeHtml(item.issue || '') + '</td>');
+            row.append('<td>' + formatAfterSaleStatus(item.status) + '</td>');
+            row.append('<td>' + formatDateTime(item.createdAt) + '</td>');
+
+            var action = '';
+            if (item.status === 'pending') {
+                action = '<button type="button" class="btn btn-success btn-xs" onclick="processAfterSale(' + item.id + ', true)" style="margin-right: 5px;">接受</button>' +
+                         '<button type="button" class="btn btn-danger btn-xs" onclick="processAfterSale(' + item.id + ', false)">拒绝</button>';
+            } else {
+                action = '<span class="text-muted">已处理</span>';
+            }
+            row.append('<td class="text-center">' + action + '</td>');
+            tbody.append(row);
+        });
+    }
+
+    // 处理售后申请
+    function processAfterSale(id, accept) {
+        var confirmText = accept ? '确定要接受这个退货申请吗？' : '确定要拒绝这个退货申请吗？';
+        if (!confirm(confirmText)) {
+            return;
+        }
+
+        $.ajax({
+            url: afterSaleApiPrefix + '/process',
+            type: 'POST',
+            data: {
+                id: id,
+                accept: accept
+            },
+            success: function(result) {
+                if (result.code == 0) {
+                    alert(result.msg || (accept ? '退货成功' : '退货失败'));
+                    loadAfterSales();
+                } else {
+                    alert('处理失败: ' + result.msg);
+                }
+            },
+            error: function() {
+                alert('处理失败，请重试');
+            }
+        });
+    }
+
+    // 加载评价列表
+    function loadReviews() {
+        $.ajax({
+            url: reviewApiPrefix + '/farmer/list',
+            type: 'GET',
+            success: function(result) {
+                if (result.code == 0) {
+                    renderReviews(result.data);
+                } else {
+                    $('#reviewTable tbody').html('<tr><td colspan="8" class="text-center text-danger">' + result.msg + '</td></tr>');
+                }
+            },
+            error: function() {
+                $('#reviewTable tbody').html('<tr><td colspan="8" class="text-center text-danger">加载评价信息失败</td></tr>');
+            }
+        });
+    }
+
+    // 渲染评价列表
+    function renderReviews(reviews) {
+        var tbody = $('#reviewTable tbody');
+        tbody.empty();
+        if (!reviews || reviews.length === 0) {
+            tbody.append('<tr><td colspan="8" class="text-center text-muted">暂无评价</td></tr>');
+            return;
+        }
+        reviews.forEach(function (item) {
+            var row = $('<tr></tr>');
+            row.append('<td>' + escapeHtml(item.id) + '</td>');
+            row.append('<td>' + escapeHtml(item.orderId) + '</td>');
+            row.append('<td>' + escapeHtml(item.buyerId) + '</td>');
+            row.append('<td>' + escapeHtml(item.buyerName || '') + '</td>');
+            row.append('<td>' + escapeHtml(item.productName || '') + '</td>');
+            
+            // 显示评分（星级）
+            var ratingHtml = '';
+            for (var i = 1; i <= 5; i++) {
+                if (i <= item.rating) {
+                    ratingHtml += '<span class="fa fa-star" style="color: #f39c12;"></span>';
+                } else {
+                    ratingHtml += '<span class="fa fa-star-o" style="color: #ddd;"></span>';
+                }
+            }
+            ratingHtml += ' (' + item.rating + '分)';
+            row.append('<td>' + ratingHtml + '</td>');
+            
+            row.append('<td>' + escapeHtml(item.content || '') + '</td>');
+            row.append('<td>' + formatDateTime(item.createdAt) + '</td>');
+            tbody.append(row);
+        });
+    }
+
+    // 页面加载时初始化
+    $(document).ready(function() {
+        loadAfterSales();
+        
+        // 切换标签页时加载对应数据
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var target = $(e.target).attr("href");
+            if (target === '#reviewTab') {
+                loadReviews();
+            }
+        });
+    });
+</script>
+</body>
+</html>
+

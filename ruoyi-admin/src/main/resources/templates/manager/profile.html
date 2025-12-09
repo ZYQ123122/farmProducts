@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的专家资料</title>
+  <th:block th:include="include :: header('我的专家资料')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    /* 上边距调小一些，让表单更靠近顶部 */
+    .profile-page { padding: 5px 15px 15px 15px; }
+    .status-label { font-weight: 600; }
+    .status-pending { color: #f0ad4e; }
+    .status-approved { color: #5cb85c; }
+    .status-rejected { color: #d9534f; }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="container-div profile-page">
+  <div class="row">
+    <div class="col-sm-12">
+      <h3>我的专家资料</h3>
+      <p>在这里填写和维护您的专家资质信息，方便平台为您匹配服务对象。</p>
+      <p>当前审核状态：
+        <span id="auditStatusText" class="status-label status-pending">加载中...</span>
+      </p>
+    </div>
+  </div>
+  <!-- 表单整体也往上贴一点 -->
+  <form id="expertForm" class="form-horizontal" style="margin-top: 5px;">
+    <div class="form-group">
+      <label class="col-sm-2 control-label is-required">专业领域：</label>
+      <div class="col-sm-8">
+        <input type="text" class="form-control" id="specialty" maxlength="100" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label is-required">工作经验：</label>
+      <div class="col-sm-8">
+        <input type="text" class="form-control" id="experience" maxlength="200" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">专家简介：</label>
+      <div class="col-sm-8">
+        <textarea class="form-control" id="description" rows="4" maxlength="1000"></textarea>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">擅长方向：</label>
+      <div class="col-sm-8">
+        <textarea class="form-control" id="expertise" rows="3" maxlength="500"
+                  placeholder="多个方向可用逗号分隔，例如：玉米高产栽培,病虫害防治"></textarea>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">主要成就：</label>
+      <div class="col-sm-8">
+        <textarea class="form-control" id="achievements" rows="3" maxlength="1000"></textarea>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-8">
+        <button type="button" class="btn btn-primary" id="btnSubmit">提交/更新资料</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+  var apiPrefix = ctx + "farmer/expert";
+  var currentAuditStatus = '0';
+
+  $(function () {
+    loadMyInfo();
+
+    $('#btnSubmit').click(function () {
+      submitForm();
+    });
+  });
+
+  function loadMyInfo() {
+    $.ajax({
+      url: apiPrefix + "/myInfo",
+      type: "GET",
+      success: function (result) {
+        if (result.code === web_status.SUCCESS) {
+          var d = result.data;
+          if (d) {
+            $('#specialty').val(d.specialty || '');
+            $('#experience').val(d.experience || '');
+            $('#description').val(d.description || '');
+            $('#expertise').val(d.expertise || '');
+            $('#achievements').val(d.achievements || '');
+            currentAuditStatus = d.auditStatus || '0';
+          } else {
+            currentAuditStatus = '0';
+          }
+          updateAuditStatus();
+        } else {
+          $.modal.alertError(result.msg || "加载专家资料失败");
+        }
+      },
+      error: function () {
+        $.modal.alertError("加载专家资料失败");
+      }
+    });
+  }
+
+  function updateAuditStatus() {
+    var text = '';
+    var cls = 'status-label ';
+    if (currentAuditStatus === '1') {
+      text = '已通过';
+      cls += 'status-approved';
+    } else if (currentAuditStatus === '2') {
+      text = '已拒绝（可修改后重新提交）';
+      cls += 'status-rejected';
+    } else {
+      text = '待审核';
+      cls += 'status-pending';
+    }
+    $('#auditStatusText').attr('class', cls).text(text);
+  }
+
+  function submitForm() {
+    if (!$('#specialty').val()) {
+      $.modal.alertWarning("请输入专业领域");
+      return;
+    }
+    if (!$('#experience').val()) {
+      $.modal.alertWarning("请输入工作经验");
+      return;
+    }
+
+    var data = {
+      specialty: $('#specialty').val(),
+      experience: $('#experience').val(),
+      description: $('#description').val(),
+      expertise: $('#expertise').val(),
+      achievements: $('#achievements').val()
+    };
+
+    var url;
+    if (currentAuditStatus === '1') {
+      url = apiPrefix + "/updateMyInfo";
+    } else {
+      url = apiPrefix + "/apply";
+    }
+
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: data,
+      success: function (result) {
+        if (result.code === web_status.SUCCESS) {
+          $.modal.msgSuccess(result.msg || "提交成功");
+          loadMyInfo();
+        } else {
+          $.modal.alertError(result.msg || "提交失败");
+        }
+      },
+      error: function () {
+        $.modal.alertError("提交失败");
+      }
+    });
+  }
+</script>
+</body>
+</html>

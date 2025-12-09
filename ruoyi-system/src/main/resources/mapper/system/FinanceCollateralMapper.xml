@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FinanceCollateralMapper">
+
+    <resultMap id="FinanceCollateralResult" type="com.ruoyi.system.domain.FinanceCollateral">
+        <id     property="id"            column="id"/>
+        <result property="applicationId" column="application_id"/>
+        <result property="fileUrl"       column="file_url"/>
+        <result property="fileName"      column="file_name"/>
+        <result property="fileType"      column="file_type"/>
+        <result property="createdAt"     column="created_at"/>
+    </resultMap>
+
+    <select id="selectFinanceCollateralListByAppId" parameterType="Long" resultMap="FinanceCollateralResult">
+        SELECT id, application_id, file_url, file_name, file_type, created_at
+        FROM finance_collateral
+        WHERE application_id = #{applicationId}
+        ORDER BY created_at ASC
+    </select>
+
+    <insert id="insertFinanceCollateral" parameterType="com.ruoyi.system.domain.FinanceCollateral" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO finance_collateral (application_id, file_url, file_name, file_type, created_at)
+        VALUES (#{applicationId}, #{fileUrl}, #{fileName}, #{fileType}, NOW())
+    </insert>
+
+    <delete id="deleteFinanceCollateralByAppId" parameterType="Long">
+        DELETE FROM finance_collateral WHERE application_id = #{applicationId}
+    </delete>
+
+</mapper>
+
+

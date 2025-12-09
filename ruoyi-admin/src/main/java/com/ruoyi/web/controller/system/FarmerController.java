@@ -108,14 +108,31 @@ public class FarmerController extends BaseController {
     }
 
     @GetMapping("/product/contact")
-    public String productContact() {
-        return "farmer/product/contact";
+    public String productContact(ModelMap mmap) {
+        SysUser user = getSysUser();
+        if (user == null)
+        {
+            return "redirect:/login";
+        }
+        mmap.put("user", user);
+        return "message/contact";
     }
 
 
     @GetMapping("/order/manage")
     public String orderManage() {
         return "farmer/order/manage";
+    }
+
+    @GetMapping("/afterSale/manage")
+    public String afterSaleManage(ModelMap mmap) {
+        SysUser user = getSysUser();
+        if (user == null)
+        {
+            return "redirect:/login";
+        }
+        mmap.put("user", user);
+        return "farmer/afterSale/manage";
     }
 
     @GetMapping("/expert/appointment")
@@ -126,6 +143,11 @@ public class FarmerController extends BaseController {
     @GetMapping("/expert/inquiry")
     public String expertInquiry() {
         return "farmer/expert/inquiry";
+    }
+
+    @GetMapping("/expert/detail")
+    public String expertDetail() {
+        return "farmer/expert/detail";
     }
 
     @GetMapping("/expert/knowledge")
@@ -143,9 +165,19 @@ public class FarmerController extends BaseController {
         return "farmer/finance/apply";
     }
 
+    @GetMapping("/finance/record")
+    public String financeRecord() {
+        return "farmer/finance/record";
+    }
+
     @GetMapping("/community/index")
     public String communityIndex() {
         return "farmer/community/index";
+    }
+
+    @GetMapping("/notification/list")
+    public String notificationList() {
+        return "farmer/notification/list";
     }
 
     private String contentMainClass(Boolean footer, Boolean tagsView) {

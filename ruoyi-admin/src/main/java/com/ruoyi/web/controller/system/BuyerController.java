@@ -74,21 +74,27 @@ public class BuyerController extends BaseController
     }
 
     @GetMapping("/trade/contact")
-    public String tradeContact()
+    public String tradeContact(ModelMap mmap)
     {
-        return "user/trade/contact";
+        SysUser user = getSysUser();
+        if (user == null)
+        {
+            return "redirect:/login";
+        }
+        mmap.put("user", user);
+        return "message/contact";
     }
 
     @GetMapping("/after-sales/return")
-    public String afterSalesReturn()
+    public String afterSalesReturn(ModelMap mmap)
     {
+        SysUser user = getSysUser();
+        if (user == null)
+        {
+            return "redirect:/login";
+        }
+        mmap.put("user", user);
         return "user/afterSales/return";
-    }
-
-    @GetMapping("/after-sales/review")
-    public String afterSalesReview()
-    {
-        return "user/afterSales/review";
     }
 
     private String contentMainClass(Boolean footer, Boolean tagsView)

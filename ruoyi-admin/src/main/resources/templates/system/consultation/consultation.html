@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('专家咨询列表')" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="consultation-form">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            咨询标题：<input type="text" name="title"/>
+                        </li>
+                        <li>
+                            咨询状态：<select name="status">
+                            <option value="">所有</option>
+                            <option value="pending">待回复</option>
+                            <option value="answered">已回复</option>
+                            <option value="closed">已关闭</option>
+                        </select>
+                        </li>
+                        <li>
+                            操作人员：<input type="text" name="createBy"/>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="$.operate.addFull()" shiro:hasPermission="system:consultation:add">
+                <i class="fa fa-plus"></i> 新增
+            </a>
+            <a class="btn btn-primary single disabled" onclick="$.operate.editFull()" shiro:hasPermission="system:consultation:edit">
+                <i class="fa fa-edit"></i> 修改
+            </a>
+            <a class="btn btn-info single disabled" onclick="replyConsultation()" shiro:hasPermission="system:consultation:reply">
+                <i class="fa fa-reply"></i> 回复
+            </a>
+            <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()" shiro:hasPermission="system:consultation:remove">
+                <i class="fa fa-remove"></i> 删除
+            </a>
+        </div>
+
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+    var editFlag = [[${@permission.hasPermi('system:consultation:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('system:consultation:remove')}]];
+    var replyFlag = [[${@permission.hasPermi('system:consultation:reply')}]];
+    var prefix = ctx + "system/consultation";
+
+    $(function() {
+        var options = {
+            url: prefix + "/list",
+            viewUrl: prefix + "/detailPage/{id}",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            modalName: "专家咨询",
+            columns: [{
+                checkbox: true
+            },
+                {
+                    field : 'id',
+                    title : '序号',
+                    width: 80
+                },
+                {
+                    field: 'title',
+                    title: '咨询标题',
+                    formatter: function (value, row, index) {
+                        return '<a href="javascript:void(0)" onclick="$.operate.view(\'' + row.id + '\')">' + value + '</a>';
+                    }
+                },
+                {
+                    field: 'content',
+                    title: '咨询内容',
+                    formatter: function(value, row, index) {
+                        if (value && value.length > 50) {
+                            return value.substring(0, 50) + '...';
+                        }
+                        return value || '';
+                    }
+                },
+                {
+                    field: 'status',
+                    title: '状态',
+                    align: 'center',
+                    width: 100,
+                    formatter: function(value, row, index) {
+                        if (value == 'pending') {
+                            return '<span class="label label-warning">待回复</span>';
+                        } else if (value == 'answered') {
+                            return '<span class="label label-success">已回复</span>';
+                        } else if (value == 'closed') {
+                            return '<span class="label label-default">已关闭</span>';
+                        }
+                        return value || '';
+                    }
+                },
+                {
+                    field : 'createBy',
+                    title : '创建者',
+                    width: 100
+                },
+                {
+                    field: 'createTime',
+                    title: '创建时间',
+                    width: 160,
+                    sortable: true
+                },
+                {
+                    title: '操作',
+                    align: 'center',
+                    width: 200,
+                    formatter: function(value, row, index) {
+                        var actions = [];
+                        actions.push('<a class="btn btn-info btn-xs" href="javascript:void(0)" onclick="$.operate.view(\'' + row.id + '\')"><i class="fa fa-eye"></i>查看</a> ');
+                        if (row.status == 'pending' && replyFlag) {
+                            actions.push('<a class="btn btn-success btn-xs" href="javascript:void(0)" onclick="replyConsultation(\'' + row.id + '\')"><i class="fa fa-reply"></i>回复</a> ');
+                        }
+                        actions.push('<a class="btn btn-primary btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="$.operate.editFull(\'' + row.id + '\')"><i class="fa fa-edit"></i>编辑</a> ');
+                        actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.id + '\')"><i class="fa fa-remove"></i>删除</a>');
+                        return actions.join('');
+                    }
+                }]
+        };
+        $.table.init(options);
+    });
+
+    // 回复咨询
+    function replyConsultation(id) {
+        if (id == undefined) {
+            var ids = $.table.selectColumns("id");
+            if (ids.length == 0) {
+                $.modal.alertWarning("请至少选择一条记录");
+                return;
+            }
+            if (ids.length > 1) {
+                $.modal.alertWarning("只能选择一条记录进行回复");
+                return;
+            }
+            id = ids[0];
+        }
+        $.modal.open("回复咨询", ctx + "system/consultation/reply?id=" + id, {
+            width: "800px",
+            height: "500px",
+            callBack: function(index) {
+                var iframe = $("#layui-layer-iframe" + index).contents();
+                iframe.find("#form-reply").submit();
+            }
+        });
+    }
+</script>
+</body>
+</html>

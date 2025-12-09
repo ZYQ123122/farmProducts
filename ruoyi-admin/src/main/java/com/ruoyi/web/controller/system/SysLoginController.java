@@ -52,7 +52,7 @@ public class SysLoginController extends BaseController
     static {
         ROLE_REDIRECT_MAP.put("farmer", "/farmer/index");
         ROLE_REDIRECT_MAP.put("expert", "/manager/index");
-        ROLE_REDIRECT_MAP.put("bank", "/guest/index");
+        ROLE_REDIRECT_MAP.put("bank", "/index");
         ROLE_REDIRECT_MAP.put("buyer", "/user/index");
         ROLE_REDIRECT_MAP.put("admin", "/index");
     }
@@ -125,17 +125,35 @@ public class SysLoginController extends BaseController
                 msg = e.getMessage();
             }
             // 记录登录失败日志
-            SysLogininfor logininfor = new SysLogininfor();
-            logininfor.setLoginName(username);
-            logininfor.setIpaddr(ServletUtils.getClientIP(request));
-            logininfor.setLoginLocation(getLoginLocation(ServletUtils.getClientIP(request)));
-            logininfor.setBrowser(ServletUtils.getBrowser(request));
-            logininfor.setOs(ServletUtils.getOs(request));
-            logininfor.setStatus("1"); // 1 表示失败
-            logininfor.setMsg(msg);
-            logininfor.setRole(role != null ? role : "unknown"); // 记录登录身份
-            logininforService.insertLogininfor(logininfor);
+            try
+            {
+                SysLogininfor logininfor = new SysLogininfor();
+                logininfor.setLoginName(username);
+                logininfor.setIpaddr(ServletUtils.getClientIP(request));
+                logininfor.setLoginLocation(getLoginLocation(ServletUtils.getClientIP(request)));
+                logininfor.setBrowser(ServletUtils.getBrowser(request));
+                logininfor.setOs(ServletUtils.getOs(request));
+                logininfor.setStatus("1"); // 1 表示失败
+                logininfor.setMsg(msg);
+                logininfor.setRole(role != null ? role : "unknown"); // 记录登录身份
+                logininforService.insertLogininfor(logininfor);
+            }
+            catch (Exception ex)
+            {
+                logger.warn("记录登录失败日志异常", ex);
+            }
 
+            return AjaxResult.error(msg);
+        }
+        catch (Exception e)
+        {
+            // 捕获其他所有异常，避免请求失败
+            logger.error("登录过程中发生异常", e);
+            String msg = "登录失败，请稍后重试";
+            if (StringUtils.isNotEmpty(e.getMessage()))
+            {
+                msg = "登录失败：" + e.getMessage();
+            }
             return AjaxResult.error(msg);
         }
     }

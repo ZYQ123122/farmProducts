@@ -69,7 +69,7 @@ public class SysIndexController extends BaseController
                 }
                 else if ("bank".equals(userRole))
                 {
-                    return "redirect:/guest/index";
+                    return "redirect:/index";
                 }
             }
             

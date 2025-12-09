@@ -125,8 +125,10 @@ class FarmerControllerTest
     @DisplayName("测试联系买家页面路由")
     void testProductContact()
     {
-        String result = farmerController.productContact();
-        assertEquals("farmer/product/contact", result);
+        ModelMap mmap = new ModelMap();
+        mockSysUser();
+        String result = farmerController.productContact(mmap);
+        assertEquals("message/contact", result);
     }
 
     @Test

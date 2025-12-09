@@ -39,7 +39,7 @@
 
       <div id="orderSection" style="display: none;">
         <div class="alert alert-info">
-          这里显示已创建的订单，订单状态同步更新。待确认订单需等待农户接单，已确认订单可以点击“确认收货”完成交易。
+          这里显示已创建的订单，订单状态同步更新。待确认订单需等待农户接单，已确认订单可以点击"确认收货"完成交易。已完成的订单可以点击"评价"按钮进行评价。
         </div>
         <table class="table table-bordered" id="orderTable">
           <thead>
@@ -137,12 +137,63 @@
   </div>
 </div>
 
+<!-- 评价弹窗 -->
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">订单评价</h4>
+      </div>
+      <div class="modal-body">
+        <form id="reviewForm">
+          <input type="hidden" id="reviewOrderId" />
+          <div class="form-group">
+            <label>订单信息</label>
+            <p class="form-control-static" id="reviewOrderInfo"></p>
+          </div>
+          <div class="form-group">
+            <label>评分 <span class="text-danger">*</span></label>
+            <div>
+              <label class="radio-inline">
+                <input type="radio" name="rating" value="1"> 1分
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="rating" value="2"> 2分
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="rating" value="3"> 3分
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="rating" value="4"> 4分
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="rating" value="5" checked> 5分
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reviewContent">评价内容</label>
+            <textarea class="form-control" id="reviewContent" rows="5" placeholder="请输入您的评价..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" id="btnSubmitReview">提交评价</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <th:block th:include="include :: footer" />
 
 <script th:inline="javascript">
   var ctx = [[@{/}]];
   var tradeApiPrefix = ctx + "buyer/api/trade";
+  var reviewApiPrefix = ctx + "api/review";
   var currentProduct = null;
+  var orderReviews = {}; // 存储订单的评价信息
 
   function escapeHtml(text) {
     if (text === undefined || text === null) {
@@ -220,6 +271,23 @@
       tbody.append('<tr><td colspan="8" class="text-center text-muted">暂无订单记录。</td></tr>');
       return;
     }
+    
+    // 只查询已完成订单的评价信息
+    var completedOrders = orders.filter(function(o) { return o.status === 'completed'; });
+    var completedOrderIds = completedOrders.map(function(o) { return o.id; });
+    
+    if (completedOrderIds.length > 0) {
+      loadOrderReviews(completedOrderIds, function() {
+        renderOrdersRows(orders);
+      });
+    } else {
+      renderOrdersRows(orders);
+    }
+  }
+
+  function renderOrdersRows(orders) {
+    var tbody = $('#orderTable tbody');
+    tbody.empty();
     orders.forEach(function (item) {
       var row = $('<tr></tr>');
       row.append('<td>' + escapeHtml(item.id) + '</td>');
@@ -234,12 +302,101 @@
       if (item.status === 'confirmed') {
         actionBtn = '<button type="button" class="btn btn-success btn-xs" data-action="complete" data-id="' + item.id + '">确认收货</button>';
       } else if (item.status === 'completed') {
-        actionBtn = '<span class="text-success">已完成</span>';
+        // 检查是否有评价
+        var review = orderReviews[item.id];
+        if (review) {
+          actionBtn = '<span class="text-success">已评价 (' + review.rating + '分)</span>';
+        } else {
+          actionBtn = '<button type="button" class="btn btn-primary btn-xs" data-action="review" data-id="' + item.id + '" data-product="' + escapeHtml(item.productName || '') + '">评价</button>';
+        }
       } else {
         actionBtn = '<span class="text-muted">等待农户确认</span>';
       }
       row.append('<td class="text-center">' + actionBtn + '</td>');
       tbody.append(row);
+    });
+  }
+
+  // 加载订单评价信息
+  function loadOrderReviews(orderIds, callback) {
+    if (!orderIds || orderIds.length === 0) {
+      orderReviews = {};
+      if (callback) callback();
+      return;
+    }
+    
+    // 初始化评价对象
+    orderReviews = {};
+    
+    // 批量查询评价
+    var completedCount = 0;
+    var totalCount = orderIds.length;
+    
+    orderIds.forEach(function(orderId) {
+      $.ajax({
+        url: reviewApiPrefix + '/order/' + orderId,
+        type: 'GET',
+        success: function(result) {
+          if (result && result.code == 0 && result.data) {
+            orderReviews[result.data.orderId] = result.data;
+          }
+          completedCount++;
+          if (completedCount === totalCount) {
+            if (callback) callback();
+          }
+        },
+        error: function() {
+          // 订单没有评价，忽略错误
+          completedCount++;
+          if (completedCount === totalCount) {
+            if (callback) callback();
+          }
+        }
+      });
+    });
+  }
+
+  // 显示评价弹窗
+  function showReviewModal(orderId, productName) {
+    $('#reviewOrderId').val(orderId);
+    $('#reviewOrderInfo').text('订单#' + orderId + ' - ' + productName);
+    $('input[name="rating"]').prop('checked', false);
+    $('input[name="rating"][value="5"]').prop('checked', true);
+    $('#reviewContent').val('');
+    $('#reviewModal').modal('show');
+  }
+
+  // 提交评价
+  function submitReview() {
+    var orderId = $('#reviewOrderId').val();
+    var rating = $('input[name="rating"]:checked').val();
+    var content = $('#reviewContent').val().trim();
+    
+    if (!rating) {
+      layer.msg('请选择评分', { icon: 5 });
+      return;
+    }
+
+    $.ajax({
+      url: reviewApiPrefix + '/create',
+      type: 'POST',
+      data: {
+        orderId: orderId,
+        rating: rating,
+        content: content
+      },
+      success: function(result) {
+        if (result.code == 0) {
+          layer.msg('评价成功', { icon: 1 });
+          $('#reviewModal').modal('hide');
+          loadOrders();
+        } else {
+          layer.msg(result.msg || '评价失败', { icon: 5 });
+        }
+      },
+      error: function() {
+        layer.msg('评价失败，请重试', { icon: 5 });
+      }
     });
   }
 
@@ -379,6 +536,16 @@
         completeOrder(orderId);
       }
     });
+
+    $('#orderTable').on('click', 'button[data-action="review"]', function () {
+      var orderId = $(this).data('id');
+      var productName = $(this).data('product');
+      if (orderId) {
+        showReviewModal(orderId, productName);
+      }
+    });
+
+    $('#btnSubmitReview').on('click', submitReview);
   });
 </script>
 </body>

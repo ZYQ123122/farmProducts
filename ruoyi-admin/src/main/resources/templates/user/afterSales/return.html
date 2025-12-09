@@ -1,20 +1,296 @@
 <!DOCTYPE html>
 <html lang="zh" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <th:block th:include="include :: header('售后退货')" />
+  <th:block th:include="include :: header('申请退货')" />
 </head>
 <body class="gray-bg">
 <div class="wrapper wrapper-content animated fadeInRight">
   <div class="ibox">
     <div class="ibox-title">
-      <h5>售后退货</h5>
+      <h5>申请退货</h5>
     </div>
     <div class="ibox-content">
-      <p>用户可在此提交退货申请，填写退货原因并查看退货进度。</p>
-      <!-- 这里可以添加退货表单、退货列表等具体功能内容 -->
+      <div class="alert alert-info">
+        在下方订单列表中选择需要退货的订单，点击"申请退货"按钮填写退货理由。
+      </div>
+      <table class="table table-bordered" id="orderTable">
+        <thead>
+        <tr>
+          <th>订单ID</th>
+          <th>农户ID</th>
+          <th>商品ID</th>
+          <th>商品名称</th>
+          <th>购买数量</th>
+          <th>总价（元）</th>
+          <th>订单状态</th>
+          <th class="text-center">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td colspan="8" class="text-center text-muted">正在加载订单信息...</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 退货信息列表 -->
+  <div class="ibox" style="margin-top: 20px;">
+    <div class="ibox-title">
+      <h5>我的退货申请</h5>
+    </div>
+    <div class="ibox-content">
+      <table class="table table-bordered" id="afterSaleTable">
+        <thead>
+        <tr>
+          <th>售后ID</th>
+          <th>订单ID</th>
+          <th>商品名称</th>
+          <th>退货理由</th>
+          <th>状态</th>
+          <th>创建时间</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td colspan="6" class="text-center text-muted">正在加载退货信息...</td>
+        </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
+
+<!-- 退货理由填写弹窗 -->
+<div class="modal fade" id="returnReasonModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">填写退货理由</h4>
+      </div>
+      <div class="modal-body">
+        <form id="returnReasonForm">
+          <input type="hidden" id="returnOrderId" />
+          <div class="form-group">
+            <label>订单信息</label>
+            <p class="form-control-static" id="returnOrderInfo"></p>
+          </div>
+          <div class="form-group">
+            <label for="returnIssue">退货理由 <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="returnIssue" rows="5" placeholder="请详细说明退货原因..." required></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" id="btnConfirmReturn">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <th:block th:include="include :: footer" />
+
+<script th:inline="javascript">
+    var ctx = [[@{/}]];
+    var buyerOrderApiPrefix = ctx + "buyer/api/trade";
+    var afterSaleApiPrefix = ctx + "api/afterSale";
+
+    function escapeHtml(text) {
+        if (text === undefined || text === null) {
+            return '';
+        }
+        return $('<div/>').text(text).html();
+    }
+
+    function formatPrice(value) {
+        if (value === undefined || value === null) {
+            return '0.00';
+        }
+        return parseFloat(value).toFixed(2);
+    }
+
+    function formatStatus(status) {
+        switch (status) {
+            case 'pending':
+                return '待确认';
+            case 'confirmed':
+                return '已确认';
+            case 'completed':
+                return '已完成';
+            default:
+                return status || '-';
+        }
+    }
+
+    function formatAfterSaleStatus(status) {
+        switch (status) {
+            case 'pending':
+                return '<span class="label label-warning">待处理</span>';
+            case 'resolved':
+                return '<span class="label label-success">已解决</span>';
+            default:
+                return status || '-';
+        }
+    }
+
+    function formatDateTime(dateStr) {
+        if (!dateStr) return '-';
+        var date = new Date(dateStr);
+        return date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0') + ' ' +
+               String(date.getHours()).padStart(2, '0') + ':' + 
+               String(date.getMinutes()).padStart(2, '0');
+    }
+
+    // 加载订单列表
+    function loadOrders() {
+        // 同时加载订单列表和退货申请列表，以便过滤已有退货申请的订单
+        $.when(
+            $.ajax({
+                url: buyerOrderApiPrefix + '/orders',
+                type: 'GET'
+            }),
+            $.ajax({
+                url: afterSaleApiPrefix + '/buyer/list',
+                type: 'GET'
+            })
+        ).done(function(ordersResult, afterSalesResult) {
+            if (ordersResult[0].code == 0 && afterSalesResult[0].code == 0) {
+                var orders = ordersResult[0].data || [];
+                var afterSales = afterSalesResult[0].data || [];
+                
+                // 获取已有退货申请的订单ID集合
+                var orderIdsWithAfterSale = new Set();
+                afterSales.forEach(function(afterSale) {
+                    orderIdsWithAfterSale.add(afterSale.orderId);
+                });
+                
+                // 过滤掉已有退货申请的订单
+                var filteredOrders = orders.filter(function(order) {
+                    return !orderIdsWithAfterSale.has(order.id);
+                });
+                
+                renderOrders(filteredOrders);
+            } else {
+                $('#orderTable tbody').html('<tr><td colspan="8" class="text-center text-danger">加载订单失败</td></tr>');
+            }
+        }).fail(function() {
+            $('#orderTable tbody').html('<tr><td colspan="8" class="text-center text-danger">加载订单失败</td></tr>');
+        });
+    }
+
+    // 渲染订单列表
+    function renderOrders(orders) {
+        var tbody = $('#orderTable tbody');
+        tbody.empty();
+        if (!orders || orders.length === 0) {
+            tbody.append('<tr><td colspan="8" class="text-center text-muted">暂无订单</td></tr>');
+            return;
+        }
+        orders.forEach(function (item) {
+            var row = $('<tr></tr>');
+            row.append('<td>' + escapeHtml(item.id) + '</td>');
+            row.append('<td>' + escapeHtml(item.farmerId) + '</td>');
+            row.append('<td>' + escapeHtml(item.productId) + '</td>');
+            row.append('<td>' + escapeHtml(item.productName || '') + '</td>');
+            row.append('<td>' + escapeHtml(item.quantity) + '</td>');
+            row.append('<td>' + formatPrice(item.totalPrice) + '</td>');
+            row.append('<td>' + formatStatus(item.status) + '</td>');
+
+            var action = '<button type="button" class="btn btn-warning btn-xs" onclick="showReturnModal(' + item.id + ', \'' + escapeHtml(item.productName || '') + '\')">申请退货</button>';
+            row.append('<td class="text-center">' + action + '</td>');
+            tbody.append(row);
+        });
+    }
+
+    // 显示退货理由填写弹窗
+    function showReturnModal(orderId, productName) {
+        $('#returnOrderId').val(orderId);
+        $('#returnOrderInfo').text('订单#' + orderId + ' - ' + productName);
+        $('#returnIssue').val('');
+        $('#returnReasonModal').modal('show');
+    }
+
+    // 确认退货申请
+    $('#btnConfirmReturn').click(function() {
+        var orderId = $('#returnOrderId').val();
+        var issue = $('#returnIssue').val().trim();
+        
+        if (!issue) {
+            alert('请填写退货理由');
+            return;
+        }
+
+        $.ajax({
+            url: afterSaleApiPrefix + '/create',
+            type: 'POST',
+            data: {
+                orderId: orderId,
+                issue: issue
+            },
+            success: function(result) {
+                if (result.code == 0) {
+                    alert('退货申请已提交');
+                    $('#returnReasonModal').modal('hide');
+                    loadOrders();
+                    loadAfterSales();
+                } else {
+                    alert('申请失败: ' + result.msg);
+                }
+            },
+            error: function() {
+                alert('申请失败，请重试');
+            }
+        });
+    });
+
+    // 加载退货申请列表
+    function loadAfterSales() {
+        $.ajax({
+            url: afterSaleApiPrefix + '/buyer/list',
+            type: 'GET',
+            success: function(result) {
+                if (result.code == 0) {
+                    renderAfterSales(result.data);
+                } else {
+                    $('#afterSaleTable tbody').html('<tr><td colspan="6" class="text-center text-danger">' + result.msg + '</td></tr>');
+                }
+            },
+            error: function() {
+                $('#afterSaleTable tbody').html('<tr><td colspan="6" class="text-center text-danger">加载退货信息失败</td></tr>');
+            }
+        });
+    }
+
+    // 渲染退货申请列表
+    function renderAfterSales(afterSales) {
+        var tbody = $('#afterSaleTable tbody');
+        tbody.empty();
+        if (!afterSales || afterSales.length === 0) {
+            tbody.append('<tr><td colspan="6" class="text-center text-muted">暂无退货申请</td></tr>');
+            return;
+        }
+        afterSales.forEach(function (item) {
+            var row = $('<tr></tr>');
+            row.append('<td>' + escapeHtml(item.id) + '</td>');
+            row.append('<td>' + escapeHtml(item.orderId) + '</td>');
+            row.append('<td>' + escapeHtml(item.productName || '') + '</td>');
+            row.append('<td>' + escapeHtml(item.issue || '') + '</td>');
+            row.append('<td>' + formatAfterSaleStatus(item.status) + '</td>');
+            row.append('<td>' + formatDateTime(item.createdAt) + '</td>');
+            tbody.append(row);
+        });
+    }
+
+    // 页面加载时初始化
+    $(document).ready(function() {
+        loadOrders();
+        loadAfterSales();
+    });
+</script>
 </body>
 </html>

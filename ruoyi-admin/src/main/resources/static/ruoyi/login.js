@@ -52,9 +52,25 @@ function login() {
                 $.modal.msg(r.msg);
             }
         },
-        error: function(xhr) {
+        error: function(xhr, status, error) {
             $.modal.closeLoading();
-            $.modal.msg("请求失败：" + xhr.statusText);
+            var errorMsg = "请求失败";
+            if (xhr.responseJSON && xhr.responseJSON.msg) {
+                errorMsg = xhr.responseJSON.msg;
+            } else if (xhr.responseText) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.msg) {
+                        errorMsg = response.msg;
+                    }
+                } catch (e) {
+                    errorMsg = "请求失败：" + (xhr.statusText || error || "未知错误");
+                }
+            } else {
+                errorMsg = "请求失败：" + (xhr.statusText || error || "未知错误") + " (状态码: " + (xhr.status || "未知") + ")";
+            }
+            $.modal.msg(errorMsg);
+            $('.imgcode').click();
         }
     });
 }

@@ -32,7 +32,7 @@
     </div>
     <a th:href="@{/farmer/index}">
       <li class="logo hidden-xs">
-        <span class="logo-lg">RuoYi</span>
+        <span class="logo-lg">农销一体平台</span>
       </li>
     </a>
     <div class="sidebar-collapse">
@@ -42,7 +42,7 @@
             <a class="menuItem noactive" title="个人中心" th:href="@{/system/user/profile}">
               <div class="hide" th:text="个人中心"></div>
               <div class="pull-left image">
-                <img th:src="@{/img/profile.jpg}" th:onerror="this.src='img/profile.jpg'" class="img-circle" alt="User Image">
+                <img th:src="@{/images/w.jpg}" th:onerror="this.src='images/w.jpg'" class="img-circle" alt="User Image">
               </div>
             </a>
             <div class="pull-left info">
@@ -61,6 +61,7 @@
             <li><a class="menuItem" th:href="@{/farmer/product/info}" th:data-refresh="true">产品信息</a></li>
             <li><a class="menuItem" th:href="@{/farmer/product/manage}" th:data-refresh="true">产品管理</a></li>
             <li><a class="menuItem" th:href="@{/farmer/order/manage}" th:data-refresh="true">订单管理</a></li>
+            <li><a class="menuItem" th:href="@{/farmer/afterSale/manage}" th:data-refresh="true">售后管理</a></li>
             <li><a class="menuItem" th:href="@{/farmer/product/demand}" th:data-refresh="true">买家需求</a></li>
             <li><a class="menuItem" th:href="@{/farmer/product/contact}" th:data-refresh="true">联系买家</a></li>
           </ul>
@@ -76,8 +77,9 @@
         <li>
           <a href="javascript:;"><i class="fa fa-money"></i> <span class="nav-label">融资管理</span><span class="fa arrow"></span></a>
           <ul class="nav nav-second-level">
-            <li><a class="menuItem" th:href="@{/farmer/finance/match}" th:data-refresh="true">匹配农户</a></li>
-            <li><a class="menuItem" th:href="@{/farmer/finance/apply}" th:data-refresh="true">融资申请</a></li>
+            <li><a class="menuItem" th:href="@{/farmer/finance/record}" th:data-refresh="true">融资记录</a></li>
+            <li><a class="menuItem" th:href="@{/farmer/finance/match}" th:data-refresh="true">融资申请</a></li>
+            <li><a class="menuItem" th:href="@{/farmer/notification/list}" th:data-refresh="true">通知中心</a></li>
           </ul>
         </li>
         <li>
@@ -103,8 +105,8 @@
           <li><a data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="全屏显示" href="javascript:;" id="fullScreen"><i class="fa fa-arrows-alt"></i> 全屏</a></li>
           <li class="dropdown user-menu">
             <a href="javascript:void(0)" class="dropdown-toggle" data-hover="dropdown">
-              <img th:src="@{/img/profile.jpg}" th:onerror="this.src='img/profile.jpg'" class="user-image">
-              <span class="hidden-xs">[[${#strings.defaultString(user.name, '-')}]]</span>
+              <img th:src="@{/images/w.jpg}" th:onerror="this.src='images/w.jpg'" class="user-image">
+              <span class="hidden-xs">[[${#strings.defaultString(user.username, '-')}]]</span>
             </a>
             <ul class="dropdown-menu">
               <li class="mt5">

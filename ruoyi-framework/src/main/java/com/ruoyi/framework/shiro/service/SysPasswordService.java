@@ -70,10 +70,33 @@ public class SysPasswordService
 
     public boolean matches(SysUser user, String newPassword)
     {
+        if (user.getPasswordHash() == null)
+        {
+            return false;
+        }
+        
         // 新表结构：直接比较password_hash
         // 使用MD5加密：username + password
         String encryptedPassword = encryptPassword(user.getUsername(), newPassword, "");
-        return user.getPasswordHash() != null && user.getPasswordHash().equals(encryptedPassword);
+        
+        // 首先尝试标准加密方式（新注册的用户）
+        if (user.getPasswordHash().equals(encryptedPassword))
+        {
+            return true;
+        }
+        
+        // 向后兼容：尝试双重加密方式（修复前注册的用户）
+        // 双重加密：MD5(username + MD5(username + password))
+        String doubleEncryption = encryptPassword(user.getUsername(), encryptedPassword, "");
+        if (user.getPasswordHash().equals(doubleEncryption))
+        {
+            // 如果匹配双重加密，在内存中升级为单次加密（不更新数据库，避免循环依赖）
+            // 用户登录成功后可以在个人中心修改密码，或者管理员可以重置密码
+            user.setPasswordHash(encryptedPassword);
+            return true;
+        }
+        
+        return false;
     }
 
     public void clearLoginRecordCache(String loginName)

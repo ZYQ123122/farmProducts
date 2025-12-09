@@ -2,11 +2,47 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>银行页面</title>
+    <title>银行工作台</title>
+    <th:block th:include="include :: header('银行工作台')" />
+    <th:block th:include="include :: layout-latest-css" />
 </head>
-<body>
-<h1>银行工作台</h1>
-<!-- 测试静态内容 -->
-<p>当前时间：<span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd HH:mm')}"></span></p>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12">
+            <h2 style="margin-top: 10px;">银行工作台</h2>
+            <p>欢迎回来，银行用户！当前时间：
+                <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd HH:mm')}"></span>
+            </p>
+        </div>
+    </div>
+    <div class="row" style="margin-top: 15px;">
+        <div class="col-sm-3">
+            <a th:href="@{/guest/finance/list}" class="btn btn-primary btn-block">
+                <i class="fa fa-list"></i> 融资申请列表
+            </a>
+        </div>
+        <div class="col-sm-3">
+            <a th:href="@{/guest/finance/review}" class="btn btn-default btn-block">
+                <i class="fa fa-check-square-o"></i> 融资审批
+            </a>
+        </div>
+        <div class="col-sm-3">
+            <a th:href="@{/guest/product/manage}" class="btn btn-success btn-block">
+                <i class="fa fa-bank"></i> 产品管理
+            </a>
+        </div>
+        <!-- 预留更多银行端功能入口 -->
+        <!--
+        <div class="col-sm-3">
+            <a th:href="@{/guest/xxx}" class="btn btn-default btn-block">
+                <i class="fa fa-file-text"></i> 其他功能
+            </a>
+        </div>
+        -->
+    </div>
+</div>
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
 </body>
 </html>
