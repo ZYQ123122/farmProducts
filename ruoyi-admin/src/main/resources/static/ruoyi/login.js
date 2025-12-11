@@ -55,20 +55,62 @@ function login() {
         error: function(xhr, status, error) {
             $.modal.closeLoading();
             var errorMsg = "请求失败";
-            if (xhr.responseJSON && xhr.responseJSON.msg) {
-                errorMsg = xhr.responseJSON.msg;
-            } else if (xhr.responseText) {
+            
+            // 优先尝试从响应JSON中获取错误信息
+            if (xhr.responseJSON) {
+                if (xhr.responseJSON.msg) {
+                    errorMsg = xhr.responseJSON.msg;
+                } else if (xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+            } 
+            // 尝试解析响应文本
+            else if (xhr.responseText) {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     if (response.msg) {
                         errorMsg = response.msg;
+                    } else if (response.message) {
+                        errorMsg = response.message;
                     }
                 } catch (e) {
-                    errorMsg = "请求失败：" + (xhr.statusText || error || "未知错误");
+                    // 如果不是JSON，可能是HTML错误页面
+                    if (xhr.status === 500) {
+                        errorMsg = "服务器内部错误，请检查后端日志";
+                    } else if (xhr.status === 404) {
+                        errorMsg = "请求的接口不存在";
+                    } else if (xhr.status === 403) {
+                        errorMsg = "没有权限访问";
+                    } else {
+                        errorMsg = "请求失败：" + (xhr.statusText || error || "未知错误");
+                    }
                 }
-            } else {
-                errorMsg = "请求失败：" + (xhr.statusText || error || "未知错误") + " (状态码: " + (xhr.status || "未知") + ")";
+            } 
+            // 网络错误或其他情况
+            else {
+                if (xhr.status === 0) {
+                    errorMsg = "网络连接失败，请检查网络或服务器是否运行";
+                } else if (xhr.status === 500) {
+                    errorMsg = "服务器内部错误 (500)";
+                } else if (xhr.status === 404) {
+                    errorMsg = "接口不存在 (404)";
+                } else if (xhr.status === 403) {
+                    errorMsg = "没有权限访问 (403)";
+                } else {
+                    errorMsg = "请求失败：" + (xhr.statusText || error || "未知错误") + " (状态码: " + (xhr.status || "未知") + ")";
+                }
             }
+            
+            // 显示详细错误信息（开发环境）
+            if (xhr.status) {
+                console.error("登录请求失败:", {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    error: error
+                });
+            }
+            
             $.modal.msg(errorMsg);
             $('.imgcode').click();
         }

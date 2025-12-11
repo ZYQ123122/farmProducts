@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <th:block th:include="include :: header('专家首页')" />
+  <th:block th:include="include :: header('银行首页')" />
   <style>
-    .expert-home-page {
+    .bank-home-page {
       padding: 20px 0;
     }
     .page-header {
@@ -124,18 +124,18 @@
   </style>
 </head>
 <body class="gray-bg">
-<div class="wrapper wrapper-content animated fadeInRight expert-home-page">
+<div class="wrapper wrapper-content animated fadeInRight bank-home-page">
   <!-- 标题和副标题 -->
   <div class="page-header">
-    <h1>专家工作台</h1>
-    <p class="subtitle">专业的农业技术咨询平台，为农户提供专业指导</p>
+    <h1>银行工作台</h1>
+    <p class="subtitle">专业的农业金融服务平台，为农户提供融资支持</p>
   </div>
 
   <!-- 图片轮播框 -->
   <div class="image-carousel-container">
     <div class="image-carousel" id="imageCarousel">
-      <img th:src="@{/images/R.jpg}" alt="农业技术展示1" class="carousel-image active" id="image1">
-      <img th:src="@{/images/wadtlwuy.png}" alt="农业技术展示2" class="carousel-image" id="image2">
+      <img th:src="@{/images/R.jpg}" alt="金融服务展示1" class="carousel-image active" id="image1">
+      <img th:src="@{/images/wadtlwuy.png}" alt="金融服务展示2" class="carousel-image" id="image2">
       <div class="carousel-indicators">
         <div class="carousel-indicator active" data-index="0"></div>
         <div class="carousel-indicator" data-index="1"></div>
@@ -145,28 +145,28 @@
 
   <!-- 平台简介 -->
   <div class="platform-intro">
-    <h2>关于专家服务平台</h2>
+    <h2>关于银行服务平台</h2>
     <div class="platform-intro-content">
       <p>
-        专家服务平台是一个专为农业专家和农户打造的<span class="highlight">专业农业技术咨询平台</span>，致力于连接农业专家和农户，提供专业的技术指导、知识分享和咨询服务，助力农业现代化发展。
+        银行服务平台是一个专为金融机构和农户打造的<span class="highlight">专业农业金融服务平台</span>，致力于连接金融机构和农业经营者，提供便捷的融资申请、审批和管理服务，助力农业产业发展和乡村振兴。
       </p>
       <p>
         <strong>平台核心功能：</strong>
       </p>
       <p>
-        • <span class="highlight">咨询回复</span>：及时回复农户的农业技术咨询，解答生产难题，提供专业的解决方案，帮助农户提升生产效率和产品质量。
+        • <span class="highlight">融资申请管理</span>：查看和管理农户提交的融资申请，实时掌握申请状态，高效处理融资需求，为农户提供及时的资金支持。
       </p>
       <p>
-        • <span class="highlight">预约处理</span>：管理农户的预约请求，安排咨询时间，提供一对一的专业指导服务，确保农户获得及时有效的帮助。
+        • <span class="highlight">融资审批</span>：专业的融资审批流程，支持在线审核、风险评估和决策，确保资金安全的同时为优质农业项目提供融资支持。
       </p>
       <p>
-        • <span class="highlight">知识库管理</span>：创建和管理农业技术知识库，分享专业知识和经验，为农户提供持续的学习资源和技术支持。
+        • <span class="highlight">产品管理</span>：管理银行金融产品，包括贷款产品、利率设置、产品信息维护等，为农户提供多样化的融资选择。
       </p>
       <p>
-        • <span class="highlight">专家资料</span>：完善个人专家资料，展示专业背景和擅长领域，让农户更好地了解您的专业能力，建立信任关系。
+        • <span class="highlight">风险控制</span>：完善的审核机制和风险控制体系，确保每一笔融资都经过严格审核，保障资金安全和业务合规。
       </p>
       <p>
-        我们致力于为农业专家提供<span class="highlight">专业的服务平台</span>，通过数字化手段扩大服务范围，提高服务效率，让专业知识更好地服务于农业生产，助力乡村振兴和农业现代化发展。
+        我们致力于为金融机构提供<span class="highlight">专业的农业金融服务平台</span>，通过数字化手段提高融资效率，降低运营成本，让金融服务更好地服务于农业产业，助力乡村振兴和农业现代化发展。
       </p>
     </div>
   </div>
@@ -217,5 +217,4 @@
 </script>
 </body>
 </html>
-
 

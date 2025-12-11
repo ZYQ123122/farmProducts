@@ -52,7 +52,7 @@ public class SysLoginController extends BaseController
     static {
         ROLE_REDIRECT_MAP.put("farmer", "/farmer/index");
         ROLE_REDIRECT_MAP.put("expert", "/manager/index");
-        ROLE_REDIRECT_MAP.put("bank", "/index");
+        ROLE_REDIRECT_MAP.put("bank", "/guest/index");
         ROLE_REDIRECT_MAP.put("buyer", "/user/index");
         ROLE_REDIRECT_MAP.put("admin", "/index");
     }

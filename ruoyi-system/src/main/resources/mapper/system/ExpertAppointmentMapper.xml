@@ -25,9 +25,9 @@
     <select id="selectAppointmentListByUserId" resultMap="ExpertAppointmentResult">
         SELECT
         a.id, a.user_id, a.expert_id, a.appointment_time, a.note, a.contact_phone, a.status, a.created_at, a.updated_at,
-        e.user_name as expert_name
+        e.username as expert_name
         FROM expert_appointment a
-        LEFT JOIN sys_user e ON a.expert_id = e.user_id
+        LEFT JOIN sys_user e ON a.expert_id = e.id
         WHERE a.user_id = #{userId}
         <if test="status != null and status != ''">
             AND a.status = #{status}
@@ -38,9 +38,9 @@
     <select id="selectAppointmentListByExpertId" resultMap="ExpertAppointmentResult">
         SELECT
         a.id, a.user_id, a.expert_id, a.appointment_time, a.note, a.contact_phone, a.status, a.created_at, a.updated_at,
-        u.user_name
+        u.username as user_name
         FROM expert_appointment a
-        LEFT JOIN sys_user u ON a.user_id = u.user_id
+        LEFT JOIN sys_user u ON a.user_id = u.id
         WHERE a.expert_id = #{expertId}
         <if test="status != null and status != ''">
             AND a.status = #{status}
