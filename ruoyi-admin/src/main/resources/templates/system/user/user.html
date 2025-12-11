@@ -90,9 +90,9 @@
 	<th:block th:include="include :: layout-latest-js" />
 	<th:block th:include="include :: ztree-js" />
 	<script th:inline="javascript">
-		var editFlag = [[${@permission.hasPermi('system:user:edit')}]];
-		var removeFlag = [[${@permission.hasPermi('system:user:remove')}]];
-		var resetPwdFlag = [[${@permission.hasPermi('system:user:resetPwd')}]];
+		var editFlag = true;
+		var removeFlag = true;
+		var resetPwdFlag = true;
 		var prefix = ctx + "system/user";
 
 		$(function() {
@@ -123,7 +123,7 @@
 		        exportUrl: prefix + "/export",
 		        importUrl: prefix + "/importData",
 		        importTemplateUrl: prefix + "/importTemplate",
-		        sortName: "createTime",
+		        sortName: "createdAt",
 		        sortOrder: "desc",
 		        modalName: "用户",
 		        columns: [{
@@ -167,7 +167,7 @@
 		        	}
 		        },
 		        {
-		            field: 'createTime',
+		            field: 'createdAt',
 		            title: '创建时间',
 		            sortable: true
 		        },

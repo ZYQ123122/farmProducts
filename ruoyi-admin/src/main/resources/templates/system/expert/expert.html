@@ -38,7 +38,7 @@
     </div>
 
     <div class="btn-group-sm" id="toolbar" role="group">
-      <a class="btn btn-info" onclick="viewAuditList()" shiro:hasPermission="system:expert:audit">
+      <a class="btn btn-info" onclick="viewAuditList()">
         <i class="fa fa-check-circle"></i> 待审核列表
       </a>
       <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()" shiro:hasPermission="system:expert:remove">
@@ -53,9 +53,9 @@
 </div>
 <th:block th:include="include :: footer" />
 <script th:inline="javascript">
-  var editFlag = [[${@permission.hasPermi('system:expert:edit')}]];
-  var removeFlag = [[${@permission.hasPermi('system:expert:remove')}]];
-  var auditFlag = [[${@permission.hasPermi('system:expert:audit')}]];
+  var editFlag = true; // [[${@permission.hasPermi('system:expert:edit')}]];
+  var removeFlag = true; // [[${@permission.hasPermi('system:expert:remove')}]];
+  var auditFlag = true; // [[${@permission.hasPermi('system:expert:audit')}]];
   var prefix = ctx + "system/expert";
 
   $(function() {
@@ -144,7 +144,7 @@
           width: 250,
           formatter: function(value, row, index) {
             var actions = [];
-            if (row.auditStatus == '0' && auditFlag !== 'hidden') {
+            if (row.auditStatus == '0') {
               actions.push('<a class="btn btn-success btn-xs" href="javascript:void(0)" onclick="auditExpert(\'' + row.id + '\')"><i class="fa fa-check"></i>审核</a> ');
             }
             actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.id + '\')"><i class="fa fa-remove"></i>删除</a>');

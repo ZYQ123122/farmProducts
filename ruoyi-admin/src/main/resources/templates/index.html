@@ -56,6 +56,28 @@
                 <li>
                     <a class="menuItem" th:href="@{/system/main}"><i class="fa fa-home"></i> <span class="nav-label">首页</span> </a>
                 </li>
+                <li>
+                    <a href="javascript:;"><i class="fa fa-gear"></i> <span class="nav-label">系统管理</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li>
+                            <a class="menuItem" th:href="@{/system/user}"><i class="fa fa-user"></i> <span class="nav-label">用户管理</span></a>
+                        </li>
+                        <li>
+                            <a class="menuItem" th:href="@{/system/role}"><i class="fa fa-users"></i> <span class="nav-label">角色管理</span></a>
+                        </li>
+                        <li>
+                            <a href="javascript:;"><i class="fa fa-graduation-cap"></i> <span class="nav-label">专家管理</span><span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level collapse">
+                                <li>
+                                    <a class="menuItem" th:href="@{/system/expert}"><i class="fa fa-list"></i> <span class="nav-label">专家管理列表</span></a>
+                                </li>
+                                <li>
+                                    <a class="menuItem" th:href="@{/system/expert/audit}"><i class="fa fa-check-circle"></i> <span class="nav-label">审核专家申请</span></a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
                 <li th:each="menu : ${menus}">
                 	<a th:class="@{${!#strings.isEmpty(menu.url) && menu.url != '#'} ? ${menu.target}}" th:href="@{${#strings.isEmpty(menu.url)} ? |#| : ${menu.url}}" th:data-refresh="${menu.isRefresh == '0'}">
                 		<i class="fa fa-bar-chart-o" th:class="${menu.icon}"></i>

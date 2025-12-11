@@ -1,7 +1,6 @@
 package com.ruoyi.web.controller.system;
 
 import java.util.List;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -33,7 +32,6 @@ public class ExpertInfoController extends BaseController
     @Autowired
     private IExpertInfoService expertInfoService;
 
-    @RequiresPermissions("system:expert:view")
     @GetMapping()
     public String expert()
     {
@@ -43,7 +41,6 @@ public class ExpertInfoController extends BaseController
     /**
      * 查询专家信息列表
      */
-    @RequiresPermissions("system:expert:list")
     @PostMapping("/list")
     @ResponseBody
     public TableDataInfo list(ExpertInfo expertInfo)
@@ -54,12 +51,20 @@ public class ExpertInfoController extends BaseController
     }
 
     /**
+     * 审核专家申请列表页面
+     */
+    @GetMapping("/audit")
+    public String auditList()
+    {
+        return prefix + "/auditList";
+    }
+
+    /**
      * 查询待审核专家列表
      */
-    @RequiresPermissions("system:expert:audit")
-    @PostMapping("/auditList")
+    @PostMapping("/audit/list")
     @ResponseBody
-    public TableDataInfo auditList()
+    public TableDataInfo auditListData()
     {
         ExpertInfo expertInfo = new ExpertInfo();
         expertInfo.setAuditStatus("0"); // 待审核
@@ -71,7 +76,6 @@ public class ExpertInfoController extends BaseController
     /**
      * 审核专家申请页面
      */
-    @RequiresPermissions("system:expert:audit")
     @GetMapping("/audit/{id}")
     public String audit(@PathVariable("id") Long id, ModelMap mmap)
     {
@@ -84,7 +88,6 @@ public class ExpertInfoController extends BaseController
      * 审核专家申请
      */
     @Log(title = "专家审核", businessType = BusinessType.UPDATE)
-    @RequiresPermissions("system:expert:audit")
     @PostMapping("/audit")
     @ResponseBody
     public AjaxResult auditSave(Long id, String auditStatus, String auditRemark)
@@ -105,7 +108,6 @@ public class ExpertInfoController extends BaseController
      * 删除专家信息
      */
     @Log(title = "专家信息", businessType = BusinessType.DELETE)
-    @RequiresPermissions("system:expert:remove")
     @PostMapping("/remove")
     @ResponseBody
     public AjaxResult remove(String ids)
