@@ -11,7 +11,7 @@ import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.utils.security.Md5Utils;
+import org.apache.shiro.crypto.hash.Md5Hash;
 import com.ruoyi.system.mapper.SysUserMapper;
 import com.ruoyi.system.service.ISysUserService;
 
@@ -31,10 +31,13 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 加密密码（新表结构：使用MD5加密 username + password）
+     * 注意：为了与SysPasswordService保持一致，应该使用相同的加密方法
+     * 但这里保留作为备用，实际注册时应该使用SysPasswordService.encryptPassword()
      */
     private String encryptPassword(String username, String password)
     {
-        return Md5Utils.hash(username + password);
+        // 使用与SysPasswordService相同的加密方式：Md5Hash
+        return new Md5Hash(username + password).toHex();
     }
 
     /**
@@ -157,8 +160,9 @@ public class SysUserServiceImpl implements ISysUserService
     @Override
     public boolean registerUser(SysUser user)
     {
-        // 加密密码
-        if (StringUtils.isNotEmpty(user.getPassword()))
+        // 密码已经在SysRegisterService中加密过了，这里不再重复加密
+        // 如果passwordHash为空，说明可能是直接调用此方法，需要加密
+        if (StringUtils.isEmpty(user.getPasswordHash()) && StringUtils.isNotEmpty(user.getPassword()))
         {
             String username = StringUtils.isNotEmpty(user.getUsername()) ? user.getUsername() : user.getLoginName();
             user.setPasswordHash(encryptPassword(username, user.getPassword()));

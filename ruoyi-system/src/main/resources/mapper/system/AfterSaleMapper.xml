@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AfterSaleMapper">
+
+	<resultMap id="AfterSaleResult" type="com.ruoyi.system.domain.AfterSale">
+		<id property="id" column="id" />
+		<result property="orderId" column="order_id" />
+		<result property="farmerId" column="farmer_id" />
+		<result property="buyerId" column="buyer_id" />
+		<result property="issue" column="issue" />
+		<result property="status" column="status" />
+		<result property="createdAt" column="created_at" />
+		<result property="orderInfo" column="order_info" />
+		<result property="productName" column="product_name" />
+		<result property="farmerName" column="farmer_name" />
+		<result property="buyerName" column="buyer_name" />
+	</resultMap>
+
+	<sql id="selectAfterSaleVo">
+		select a.id, a.order_id, a.farmer_id, a.buyer_id, a.issue, a.status, a.created_at,
+		       concat('订单#', o.id, ' - ', fp.name) as order_info,
+		       fp.name as product_name,
+		       su1.username as farmer_name,
+		       su2.username as buyer_name
+		from after_sale a
+		left join orders o on a.order_id = o.id
+		left join farmer_product fp on o.product_id = fp.id
+		left join sys_user su1 on a.farmer_id = su1.id
+		left join sys_user su2 on a.buyer_id = su2.id
+	</sql>
+
+	<select id="selectAfterSaleById" parameterType="Long" resultMap="AfterSaleResult">
+		<include refid="selectAfterSaleVo"/>
+		where a.id = #{id}
+	</select>
+
+	<select id="selectAfterSaleList" parameterType="AfterSale" resultMap="AfterSaleResult">
+		<include refid="selectAfterSaleVo"/>
+		<where>
+			<if test="orderId != null">
+				AND a.order_id = #{orderId}
+			</if>
+			<if test="farmerId != null">
+				AND a.farmer_id = #{farmerId}
+			</if>
+			<if test="buyerId != null">
+				AND a.buyer_id = #{buyerId}
+			</if>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+		</where>
+		order by a.created_at desc
+	</select>
+
+	<select id="selectAfterSaleListByFarmer" parameterType="Long" resultMap="AfterSaleResult">
+		<include refid="selectAfterSaleVo"/>
+		where a.farmer_id = #{farmerId}
+		order by a.created_at desc
+	</select>
+
+	<select id="selectAfterSaleListByBuyer" parameterType="Long" resultMap="AfterSaleResult">
+		<include refid="selectAfterSaleVo"/>
+		where a.buyer_id = #{buyerId}
+		order by a.created_at desc
+	</select>
+
+	<insert id="insertAfterSale" parameterType="AfterSale" useGeneratedKeys="true" keyProperty="id">
+		insert into after_sale(
+			order_id, farmer_id, buyer_id, issue, status, created_at
+		)values(
+			#{orderId}, #{farmerId}, #{buyerId}, #{issue}, #{status}, now()
+		)
+	</insert>
+
+	<update id="updateAfterSale" parameterType="AfterSale">
+		update after_sale
+		<set>
+			<if test="issue != null and issue != ''">issue = #{issue},</if>
+			<if test="status != null and status != ''">status = #{status},</if>
+		</set>
+		where id = #{id}
+	</update>
+
+	<delete id="deleteAfterSaleById" parameterType="Long">
+		delete from after_sale where id = #{id}
+	</delete>
+
+	<delete id="deleteAfterSaleByIds" parameterType="Long">
+		delete from after_sale where id in
+		<foreach collection="array" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+
+</mapper>
+
+
+
+
+
+
+

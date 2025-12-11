@@ -117,25 +117,22 @@ class BuyerControllerTest
     @DisplayName("测试联系页面路由")
     void testTradeContact()
     {
-        String result = buyerController.tradeContact();
-        assertEquals("user/trade/contact", result);
+        ModelMap mmap = new ModelMap();
+        mockSysUser();
+        String result = buyerController.tradeContact(mmap);
+        assertEquals("message/contact", result);
     }
 
     @Test
     @DisplayName("测试退货页面路由")
     void testAfterSalesReturn()
     {
-        String result = buyerController.afterSalesReturn();
+        ModelMap mmap = new ModelMap();
+        mockSysUser();
+        String result = buyerController.afterSalesReturn(mmap);
         assertEquals("user/afterSales/return", result);
     }
 
-    @Test
-    @DisplayName("测试评价页面路由")
-    void testAfterSalesReview()
-    {
-        String result = buyerController.afterSalesReview();
-        assertEquals("user/afterSales/review", result);
-    }
 
     private void mockSysUser()
     {

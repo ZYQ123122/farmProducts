@@ -9,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.system.domain.AfterSale;
 import com.ruoyi.system.domain.FarmerProduct;
 import com.ruoyi.system.domain.TradeOrder;
 import com.ruoyi.system.mapper.TradeOrderMapper;
+import com.ruoyi.system.service.IAfterSaleService;
 import com.ruoyi.system.service.IFarmerProductService;
 import com.ruoyi.system.service.ITradeOrderService;
 
@@ -30,6 +32,9 @@ public class TradeOrderServiceImpl implements ITradeOrderService
 
     @Autowired
     private IFarmerProductService farmerProductService;
+
+    @Autowired
+    private IAfterSaleService afterSaleService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -83,14 +88,68 @@ public class TradeOrderServiceImpl implements ITradeOrderService
     public List<TradeOrder> listOrdersForBuyer(Long buyerId)
     {
         Assert.notNull(buyerId, "买家不能为空");
-        return tradeOrderMapper.selectOrdersByBuyer(buyerId);
+        List<TradeOrder> orders = tradeOrderMapper.selectOrdersByBuyer(buyerId);
+        
+        // 获取该买家所有已解决的退货申请
+        AfterSale query = new AfterSale();
+        query.setBuyerId(buyerId);
+        query.setStatus("resolved");
+        List<AfterSale> resolvedAfterSales = afterSaleService.selectAfterSaleList(query);
+        
+        // 获取有已解决退货申请的订单ID集合
+        java.util.Set<Long> orderIdsWithResolvedAfterSale = new java.util.HashSet<>();
+        if (resolvedAfterSales != null)
+        {
+            for (AfterSale afterSale : resolvedAfterSales)
+            {
+                if (afterSale.getOrderId() != null)
+                {
+                    orderIdsWithResolvedAfterSale.add(afterSale.getOrderId());
+                }
+            }
+        }
+        
+        // 过滤掉有已解决退货申请的订单
+        if (!orderIdsWithResolvedAfterSale.isEmpty())
+        {
+            orders.removeIf(order -> orderIdsWithResolvedAfterSale.contains(order.getId()));
+        }
+        
+        return orders;
     }
 
     @Override
     public List<TradeOrder> listOrdersForFarmer(Long farmerId)
     {
         Assert.notNull(farmerId, "农户不能为空");
-        return tradeOrderMapper.selectOrdersByFarmer(farmerId);
+        List<TradeOrder> orders = tradeOrderMapper.selectOrdersByFarmer(farmerId);
+        
+        // 获取该农户所有已解决的退货申请
+        AfterSale query = new AfterSale();
+        query.setFarmerId(farmerId);
+        query.setStatus("resolved");
+        List<AfterSale> resolvedAfterSales = afterSaleService.selectAfterSaleList(query);
+        
+        // 获取有已解决退货申请的订单ID集合
+        java.util.Set<Long> orderIdsWithResolvedAfterSale = new java.util.HashSet<>();
+        if (resolvedAfterSales != null)
+        {
+            for (AfterSale afterSale : resolvedAfterSales)
+            {
+                if (afterSale.getOrderId() != null)
+                {
+                    orderIdsWithResolvedAfterSale.add(afterSale.getOrderId());
+                }
+            }
+        }
+        
+        // 过滤掉有已解决退货申请的订单
+        if (!orderIdsWithResolvedAfterSale.isEmpty())
+        {
+            orders.removeIf(order -> orderIdsWithResolvedAfterSale.contains(order.getId()));
+        }
+        
+        return orders;
     }
 
     @Override

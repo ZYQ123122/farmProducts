@@ -32,7 +32,7 @@
         </div>
         <a th:href="@{/user/index}">
             <li class="logo hidden-xs">
-                <span class="logo-lg">RuoYi</span>
+                <span class="logo-lg">农销一体平台</span>
             </li>
         </a>
         <div class="sidebar-collapse">
@@ -42,7 +42,7 @@
                         <a class="menuItem noactive" title="个人中心" th:href="@{/system/user/profile}">
                             <div class="hide" th:text="个人中心"></div>
                             <div class="pull-left image">
-                                <img th:src="(${#strings.isEmpty(user.avatar)}) ? @{/img/profile.jpg} : @{${user.avatar}}" th:onerror="this.src='img/profile.jpg'" class="img-circle" alt="User Image">
+                                <img th:src="(${#strings.isEmpty(user.avatar)}) ? @{/images/w.jpg} : @{${user.avatar}}" th:onerror="this.src='images/w.jpg'" class="img-circle" alt="User Image">
                             </div>
                         </a>
                         <div class="pull-left info">
@@ -72,7 +72,6 @@
                     <a href="javascript:;"><i class="fa fa-life-ring"></i> <span class="nav-label">售后服务</span><span class="fa arrow"></span></a>
                     <ul class="nav nav-second-level">
                         <li><a class="menuItem" th:href="@{/user/after-sales/return}" th:data-refresh="true">申请退货</a></li>
-                        <li><a class="menuItem" th:href="@{/user/after-sales/review}" th:data-refresh="true">订单评价</a></li>
                     </ul>
                 </li>
             </ul>
@@ -95,8 +94,8 @@
                     <li><a data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="全屏显示" href="javascript:;" id="fullScreen"><i class="fa fa-arrows-alt"></i> 全屏</a></li>
                     <li class="dropdown user-menu">
                         <a href="javascript:void(0)" class="dropdown-toggle" data-hover="dropdown">
-                            <img th:src="(${#strings.isEmpty(user.avatar)}) ? @{/img/profile.jpg} : @{${user.avatar}}" th:onerror="this.src='img/profile.jpg'" class="user-image">
-                            <span class="hidden-xs">[[${#strings.defaultString(user.userName, '-')}]]</span>
+                            <img th:src="(${#strings.isEmpty(user.avatar)}) ? @{/images/w.jpg} : @{${user.avatar}}" th:onerror="this.src='images/w.jpg'" class="user-image">
+                            <span class="hidden-xs">[[${#strings.defaultString(user.username, '-')}]]</span>
                         </a>
                         <ul class="dropdown-menu">
                             <li class="mt5">

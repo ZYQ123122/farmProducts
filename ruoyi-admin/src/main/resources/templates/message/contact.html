@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>联系</title>
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
+    <link th:href="@{/css/font-awesome.min.css}" rel="stylesheet" />
+    <link th:href="@{/css/style.min.css}" rel="stylesheet" />
+    <link th:href="@{/ruoyi/css/ry-ui.css}" rel="stylesheet" />
+    <style>
+        .chat-container {
+            height: calc(100vh - 120px);
+            display: flex;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .conversation-list {
+            width: 300px;
+            border-right: 1px solid #ddd;
+            background: #f5f5f5;
+            overflow-y: auto;
+        }
+        .conversation-item {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+        .conversation-item:hover {
+            background: #e8e8e8;
+        }
+        .conversation-item:hover .delete-conversation-btn {
+            display: inline-block;
+        }
+        .conversation-item.active {
+            background: #d4edda;
+        }
+        .delete-conversation-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: none;
+            background: #f56c6c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 3px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .delete-conversation-btn:hover {
+            background: #f78989;
+        }
+        .conversation-item .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .conversation-item .last-message {
+            color: #666;
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .conversation-item .time {
+            color: #999;
+            font-size: 11px;
+            float: right;
+        }
+        .unread-badge {
+            background: #f56c6c;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 11px;
+            float: right;
+        }
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            background: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header .order-select {
+            margin-left: 20px;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .message-item {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .message-item.sent {
+            justify-content: flex-end;
+        }
+        .message-item.received {
+            justify-content: flex-start;
+        }
+        .message-bubble {
+            max-width: 60%;
+            padding: 10px 15px;
+            border-radius: 8px;
+            word-wrap: break-word;
+        }
+        .message-item.sent .message-bubble {
+            background: #409eff;
+            color: white;
+        }
+        .message-item.received .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .message-image {
+            max-width: 200px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .message-file {
+            display: inline-block;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            text-decoration: none;
+            color: inherit;
+        }
+        .message-file:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .order-tag {
+            display: inline-block;
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            background: #fff;
+        }
+        .chat-input-toolbar {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .chat-input-toolbar .search-box {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .input-area {
+            display: flex;
+            align-items: flex-end;
+        }
+        .input-area textarea {
+            flex: 1;
+            resize: none;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            min-height: 60px;
+            max-height: 120px;
+        }
+        .input-actions {
+            margin-left: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-send {
+            background: #409eff;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-send:hover:not(:disabled) {
+            background: #66b1ff;
+        }
+        .btn-send:disabled {
+            background: #c0c4cc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid" style="padding: 20px;">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="chat-container">
+                    <!-- 会话列表 -->
+                    <div class="conversation-list" id="conversationList">
+                        <div class="empty-state">加载中...</div>
+                    </div>
+                    
+                    <!-- 聊天区域 -->
+                    <div class="chat-area">
+                        <div class="chat-header">
+                            <div>
+                                <strong id="chatUserName">请选择联系人</strong>
+                                <div class="order-select" id="orderSelectArea" style="display: none;">
+                                    <select id="orderSelect" class="form-control" style="display: inline-block; width: auto;">
+                                        <option value="">全部消息</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <input type="text" id="searchKeyword" class="form-control" placeholder="搜索聊天记录..." style="display: inline-block; width: 200px;">
+                                <button class="btn btn-sm btn-default" onclick="searchMessages()">搜索</button>
+                                <button class="btn btn-sm btn-default" onclick="clearSearch()">清除</button>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="empty-state">请从左侧选择联系人开始聊天</div>
+                        </div>
+                        
+                        <div class="chat-input">
+                            <div class="chat-input-toolbar">
+                                <span id="selectedOrderInfo" style="color: #1890ff; font-size: 12px;"></span>
+                                <button id="cancelOrderBtn" class="btn btn-sm btn-default" onclick="cancelOrder()" style="display: none; margin-left: 10px;">
+                                    <i class="fa fa-times"></i> 取消订单
+                                </button>
+                            </div>
+                            <div class="input-area">
+                                <textarea id="messageInput" placeholder="输入消息..." onkeydown="handleKeyDown(event)" oninput="checkSendButton()"></textarea>
+                                <div class="input-actions">
+                                    <input type="file" id="fileInput" style="display: none;" accept="image/*,application/*" onchange="handleFileSelect(event)">
+                                    <button class="btn btn-default" onclick="document.getElementById('fileInput').click()" title="上传文件/图片">
+                                        <i class="fa fa-paperclip"></i>
+                                    </button>
+                                    <button class="btn btn-default" onclick="selectOrder()" title="选择订单">
+                                        <i class="fa fa-shopping-cart"></i>
+                                    </button>
+                                    <button id="sendBtn" class="btn btn-send" onclick="sendMessage()" disabled>发送</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/jquery.min.js}"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <script>
+        let currentUserId = [[${user.id}]];
+        let currentUserRole = '[[${user.role}]]';
+        let currentOtherUserId = null;
+        let currentOrderId = null;
+        let currentSearchKeyword = null;
+        let orders = [];
+        let refreshInterval = null;
+
+        // 页面加载时初始化
+        $(document).ready(function() {
+            loadConversations();
+            loadOrders();
+            checkSendButton();
+            // 监听文件选择变化
+            $('#fileInput').on('change', function() {
+                checkSendButton();
+            });
+            // 每5秒刷新一次消息
+            refreshInterval = setInterval(function() {
+                if (currentOtherUserId) {
+                    loadMessages();
+                }
+            }, 5000);
+        });
+
+        // 加载会话列表
+        function loadConversations() {
+            $.ajax({
+                url: '/api/message/conversations',
+                type: 'GET',
+                success: function(result) {
+                    if (result.code == 0) {
+                        renderConversations(result.data);
+                    } else {
+                        $('#conversationList').html('<div class="empty-state">' + result.msg + '</div>');
+                    }
+                },
+                error: function() {
+                    $('#conversationList').html('<div class="empty-state">加载会话列表失败</div>');
+                }
+            });
+        }
+
+        // 渲染会话列表
+        function renderConversations(conversations) {
+            if (!conversations || conversations.length === 0) {
+                $('#conversationList').html('<div class="empty-state">暂无会话</div>');
+                return;
+            }
+            
+            let html = '';
+            conversations.forEach(function(conv) {
+                let otherUserId = conv.senderId == currentUserId ? conv.receiverId : conv.senderId;
+                let otherUserName = conv.senderId == currentUserId ? conv.receiverName : conv.senderName;
+                let otherUserRole = conv.senderId == currentUserId ? conv.receiverRole : conv.senderRole;
+                let orderId = conv.relatedOrderId || null;
+                let lastMessage = conv.content || (conv.messageType == 'image' ? '[图片]' : '[文件]');
+                let time = formatTime(conv.createdAt);
+                let unreadCount = conv.unreadCount || 0;
+                
+                // 格式化角色显示：农户显示"卖家"，买家显示"买家"
+                let roleText = '';
+                if (otherUserRole === 'farmer') {
+                    roleText = '卖家';
+                } else if (otherUserRole === 'buyer') {
+                    roleText = '买家';
+                }
+                
+                // 构建显示名称：用户名 + 角色
+                let displayName = escapeHtml(otherUserName || '用户');
+                if (roleText) {
+                    displayName += ' (' + roleText + ')';
+                }
+                
+                // 如果有订单，显示订单信息
+                let orderText = '';
+                if (orderId && conv.orderInfo) {
+                    orderText = ' - ' + escapeHtml(conv.orderInfo);
+                }
+                
+                html += '<div class="conversation-item" data-user-id="' + otherUserId + '" data-order-id="' + (orderId || '') + '" onclick="selectConversation(' + otherUserId + ', \'' + escapeHtml(otherUserName) + '\', \'' + escapeHtml(otherUserRole) + '\', ' + (orderId || 'null') + ')">';
+                html += '<button class="delete-conversation-btn" onclick="event.stopPropagation(); deleteConversation(' + otherUserId + ', ' + (orderId || 'null') + ', \'' + escapeHtml(displayName + (orderText ? orderText : '')) + '\')" title="删除会话">';
+                html += '<i class="fa fa-trash"></i>';
+                html += '</button>';
+                html += '<div class="name">' + displayName;
+                if (unreadCount > 0) {
+                    html += '<span class="unread-badge">' + unreadCount + '</span>';
+                }
+                html += '<span class="time">' + time + '</span></div>';
+                if (orderText) {
+                    html += '<div class="last-message" style="color: #1890ff; font-size: 11px; margin-bottom: 3px;">' + orderText + '</div>';
+                }
+                html += '<div class="last-message">' + escapeHtml(lastMessage) + '</div>';
+                html += '</div>';
+            });
+            
+            $('#conversationList').html(html);
+        }
+
+        // 选择会话
+        function selectConversation(otherUserId, otherUserName, otherUserRole, orderId) {
+            currentOtherUserId = otherUserId;
+            currentOrderId = orderId || null;
+            currentSearchKeyword = null;
+            
+            $('.conversation-item').removeClass('active');
+            // 根据用户ID和订单ID匹配会话项
+            $('.conversation-item').each(function() {
+                let itemUserId = $(this).data('user-id');
+                let itemOrderId = $(this).data('order-id') || '';
+                if (itemUserId == otherUserId && (itemOrderId == (orderId || ''))) {
+                    $(this).addClass('active');
+                }
+            });
+            
+            // 格式化显示名称：用户名 + 角色
+            let roleText = '';
+            if (otherUserRole === 'farmer') {
+                roleText = '卖家';
+            } else if (otherUserRole === 'buyer') {
+                roleText = '买家';
+            }
+            let displayName = otherUserName || '用户';
+            if (roleText) {
+                displayName += ' (' + roleText + ')';
+            }
+            if (orderId) {
+                // 从会话列表中获取订单信息
+                $('.conversation-item').each(function() {
+                    let itemUserId = $(this).data('user-id');
+                    let itemOrderId = $(this).data('order-id');
+                    if (itemUserId == otherUserId && itemOrderId == orderId) {
+                        let orderInfo = $(this).find('.last-message').first().text();
+                        if (orderInfo && orderInfo.startsWith(' - ')) {
+                            displayName += ' - ' + orderInfo.substring(3);
+                        }
+                        return false;
+                    }
+                });
+            }
+            
+            $('#chatUserName').text(displayName);
+            $('#orderSelectArea').show();
+            
+            if (currentOrderId) {
+                // 查找订单信息
+                let order = orders.find(o => o.id == currentOrderId || o.id.toString() == currentOrderId);
+                if (order) {
+                    $('#selectedOrderInfo').html('当前订单: 订单#' + order.id + ' - ' + (order.productName || '商品'));
+                    $('#cancelOrderBtn').show();
+                    $('#cancelOrderBtn').html('<i class="fa fa-times"></i> 取消订单 (订单#' + order.id + ')');
+                } else {
+                    $('#selectedOrderInfo').html('当前订单: 订单#' + currentOrderId);
+                    $('#cancelOrderBtn').show();
+                    $('#cancelOrderBtn').html('<i class="fa fa-times"></i> 取消订单 (订单#' + currentOrderId + ')');
+                }
+                $('#orderSelect').val(currentOrderId);
+            } else {
+                $('#selectedOrderInfo').text('');
+                $('#cancelOrderBtn').hide();
+                $('#orderSelect').val('');
+            }
+            $('#searchKeyword').val('');
+            
+            loadMessages();
+        }
+
+        // 加载消息
+        function loadMessages() {
+            if (!currentOtherUserId) return;
+            
+            $.ajax({
+                url: '/api/message/messages',
+                type: 'GET',
+                data: {
+                    otherUserId: currentOtherUserId,
+                    relatedOrderId: currentOrderId || '',
+                    searchKeyword: currentSearchKeyword || ''
+                },
+                success: function(result) {
+                    if (result.code == 0) {
+                        renderMessages(result.data);
+                        scrollToBottom();
+                    } else {
+                        $('#chatMessages').html('<div class="empty-state">' + result.msg + '</div>');
+                    }
+                },
+                error: function() {
+                    $('#chatMessages').html('<div class="empty-state">加载消息失败</div>');
+                }
+            });
+        }
+
+        // 渲染消息
+        function renderMessages(messages) {
+            if (!messages || messages.length === 0) {
+                $('#chatMessages').html('<div class="empty-state">暂无消息</div>');
+                return;
+            }
+            
+            let html = '';
+            messages.forEach(function(msg) {
+                let isSent = msg.senderId == currentUserId;
+                let time = formatTime(msg.createdAt);
+                
+                html += '<div class="message-item ' + (isSent ? 'sent' : 'received') + '">';
+                html += '<div class="message-bubble">';
+                
+                if (msg.relatedOrderId) {
+                    html += '<div class="order-tag">订单: ' + escapeHtml(msg.orderInfo || '订单#' + msg.relatedOrderId) + '</div>';
+                }
+                
+                if (msg.messageType == 'image') {
+                    html += '<img src="' + escapeHtml(msg.fileUrl) + '" class="message-image" onclick="showImage(\'' + escapeHtml(msg.fileUrl) + '\')">';
+                } else if (msg.messageType == 'file') {
+                    html += '<a href="' + escapeHtml(msg.fileUrl) + '" download="' + escapeHtml(msg.fileName || '文件') + '" class="message-file">';
+                    html += '<i class="fa fa-file"></i> ' + escapeHtml(msg.fileName || '文件');
+                    html += '</a>';
+                } else {
+                    html += '<div>' + escapeHtml(msg.content || '') + '</div>';
+                }
+                
+                html += '<div class="message-time">' + time + '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            $('#chatMessages').html(html);
+        }
+
+        // 检查发送按钮状态
+        function checkSendButton() {
+            let content = $('#messageInput').val().trim();
+            let hasFile = $('#fileInput')[0].files.length > 0;
+            let sendBtn = $('#sendBtn');
+            
+            if (content || hasFile) {
+                sendBtn.prop('disabled', false);
+                sendBtn.removeClass('disabled');
+            } else {
+                sendBtn.prop('disabled', true);
+                sendBtn.addClass('disabled');
+            }
+        }
+
+        // 发送消息
+        function sendMessage() {
+            if (!currentOtherUserId) {
+                alert('请先选择联系人');
+                return;
+            }
+            
+            let content = $('#messageInput').val().trim();
+            if (!content && !$('#fileInput')[0].files.length) {
+                alert('请输入消息或选择文件');
+                return;
+            }
+            
+            let formData = new FormData();
+            formData.append('receiverId', currentOtherUserId);
+            if (content) {
+                formData.append('content', content);
+            }
+            if (currentOrderId) {
+                formData.append('relatedOrderId', currentOrderId);
+            }
+            if ($('#fileInput')[0].files.length > 0) {
+                formData.append('file', $('#fileInput')[0].files[0]);
+            }
+            
+            $.ajax({
+                url: '/api/message/send',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(result) {
+                    if (result.code == 0) {
+                        $('#messageInput').val('');
+                        $('#fileInput').val('');
+                        checkSendButton();
+                        loadMessages();
+                        loadConversations();
+                    } else {
+                        alert('发送失败: ' + result.msg);
+                    }
+                },
+                error: function() {
+                    alert('发送失败，请重试');
+                }
+            });
+        }
+
+        // 处理文件选择
+        function handleFileSelect(event) {
+            let file = event.target.files[0];
+            if (file) {
+                checkSendButton();
+                // 如果有联系人，自动发送；否则只更新按钮状态
+                if (currentOtherUserId) {
+                    sendMessage();
+                }
+            } else {
+                checkSendButton();
+            }
+        }
+
+        // 选择订单
+        function selectOrder() {
+            if (orders.length === 0) {
+                alert('暂无订单');
+                return;
+            }
+            
+            // 创建订单选择模态框
+            let modalHtml = '<div class="modal fade" id="orderSelectModal" tabindex="-1" role="dialog">';
+            modalHtml += '<div class="modal-dialog" role="document">';
+            modalHtml += '<div class="modal-content">';
+            modalHtml += '<div class="modal-header">';
+            modalHtml += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+            modalHtml += '<h4 class="modal-title">选择订单</h4>';
+            modalHtml += '</div>';
+            modalHtml += '<div class="modal-body">';
+            modalHtml += '<select id="orderSelectModalSelect" class="form-control" style="width: 100%;">';
+            modalHtml += '<option value="">请选择订单</option>';
+            orders.forEach(function(order) {
+                let orderText = '订单#' + order.id + ' - ' + (order.productName || '商品');
+                modalHtml += '<option value="' + order.id + '">' + orderText + '</option>';
+            });
+            modalHtml += '</select>';
+            modalHtml += '</div>';
+            modalHtml += '<div class="modal-footer">';
+            modalHtml += '<button type="button" class="btn btn-primary" onclick="confirmOrderSelect()">确定</button>';
+            modalHtml += '<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>';
+            modalHtml += '</div>';
+            modalHtml += '</div>';
+            modalHtml += '</div>';
+            modalHtml += '</div>';
+            
+            // 移除旧的模态框（如果存在）
+            $('#orderSelectModal').remove();
+            $('body').append(modalHtml);
+            $('#orderSelectModal').modal('show');
+        }
+
+        // 确认订单选择
+        function confirmOrderSelect() {
+            let selectedOrderId = $('#orderSelectModalSelect').val();
+            if (!selectedOrderId) {
+                alert('请选择订单');
+                return;
+            }
+            
+            let order = orders.find(o => o.id == selectedOrderId || o.id.toString() == selectedOrderId);
+            if (order) {
+                currentOrderId = order.id;
+                $('#orderSelect').val(order.id);
+                let orderText = '订单#' + order.id + ' - ' + (order.productName || '商品');
+                $('#selectedOrderInfo').html('当前订单: ' + orderText);
+                $('#cancelOrderBtn').show();
+                $('#cancelOrderBtn').html('<i class="fa fa-times"></i> 取消订单 (' + orderText + ')');
+                $('#orderSelectModal').modal('hide');
+                
+                // 根据用户角色自动确定联系人
+                let otherUserId = null;
+                let otherUserName = '';
+                let otherUserRole = '';
+                
+                if (currentUserRole === 'farmer') {
+                    // 农户选择订单，自动选择买家
+                    otherUserId = order.buyerId;
+                } else if (currentUserRole === 'buyer') {
+                    // 买家选择订单，自动选择农户
+                    otherUserId = order.farmerId;
+                }
+                
+                // 获取联系人名称和角色
+                if (otherUserId) {
+                    // 通过API获取用户信息（用户名和角色）
+                    $.ajax({
+                        url: '/api/message/user/' + otherUserId,
+                        type: 'GET',
+                        async: false,
+                        success: function(result) {
+                            if (result.code == 0 && result.data) {
+                                otherUserName = result.data.username || ('用户#' + otherUserId);
+                                otherUserRole = result.data.role || '';
+                            } else {
+                                otherUserName = '用户#' + otherUserId;
+                                otherUserRole = '';
+                            }
+                        },
+                        error: function() {
+                            otherUserName = '用户#' + otherUserId;
+                            otherUserRole = '';
+                        }
+                    });
+                    
+                    // 自动选择联系人，传递订单ID
+                    selectConversation(otherUserId, otherUserName, otherUserRole, order.id);
+                }
+                
+                loadMessages();
+            } else {
+                alert('订单不存在');
+            }
+        }
+
+        // 取消订单选择
+        function cancelOrder() {
+            if (!currentOrderId) {
+                return;
+            }
+            
+            // 显示具体订单信息
+            let order = orders.find(o => o.id == currentOrderId || o.id.toString() == currentOrderId);
+            let orderText = order ? ('订单#' + order.id + ' - ' + (order.productName || '商品')) : ('订单#' + currentOrderId);
+            
+            if (confirm('确定要取消订单 "' + orderText + '" 的关联吗？')) {
+                currentOrderId = null;
+                $('#orderSelect').val('');
+                $('#selectedOrderInfo').text('');
+                $('#cancelOrderBtn').hide();
+                
+                // 更新聊天标题，移除订单信息
+                if (currentOtherUserId) {
+                    // 重新获取用户信息
+                    $.ajax({
+                        url: '/api/message/user/' + currentOtherUserId,
+                        type: 'GET',
+                        success: function(result) {
+                            if (result.code == 0 && result.data) {
+                                let userName = result.data.username || '用户';
+                                let userRole = result.data.role || '';
+                                let roleText = '';
+                                if (userRole === 'farmer') {
+                                    roleText = '卖家';
+                                } else if (userRole === 'buyer') {
+                                    roleText = '买家';
+                                }
+                                let displayName = userName;
+                                if (roleText) {
+                                    displayName += ' (' + roleText + ')';
+                                }
+                                $('#chatUserName').text(displayName);
+                            }
+                        }
+                    });
+                }
+                
+                loadMessages();
+            }
+        }
+
+        // 加载订单列表
+        function loadOrders() {
+            $.ajax({
+                url: '/api/message/orders',
+                type: 'GET',
+                success: function(result) {
+                    if (result.code == 0) {
+                        orders = result.data || [];
+                        updateOrderSelect();
+                    }
+                }
+            });
+        }
+
+        // 更新订单选择下拉框
+        function updateOrderSelect() {
+            let html = '<option value="">全部消息</option>';
+            orders.forEach(function(order) {
+                let orderText = '订单#' + order.id + ' - ' + (order.productName || '商品');
+                html += '<option value="' + order.id + '">' + orderText + '</option>';
+            });
+            $('#orderSelect').html(html);
+            
+            $('#orderSelect').change(function() {
+                currentOrderId = $(this).val() || null;
+                if (currentOrderId) {
+                    let order = orders.find(o => o.id == currentOrderId || o.id.toString() == currentOrderId);
+                    if (order) {
+                        let orderText = '订单#' + order.id + ' - ' + (order.productName || '商品');
+                        $('#selectedOrderInfo').text('当前订单: ' + orderText);
+                        $('#cancelOrderBtn').show();
+                        $('#cancelOrderBtn').html('<i class="fa fa-times"></i> 取消订单 (' + orderText + ')');
+                    } else {
+                        $('#selectedOrderInfo').text('当前订单: 订单#' + currentOrderId);
+                        $('#cancelOrderBtn').show();
+                        $('#cancelOrderBtn').html('<i class="fa fa-times"></i> 取消订单 (订单#' + currentOrderId + ')');
+                    }
+                } else {
+                    $('#selectedOrderInfo').text('');
+                    $('#cancelOrderBtn').hide();
+                }
+                loadMessages();
+            });
+        }
+
+        // 搜索消息
+        function searchMessages() {
+            currentSearchKeyword = $('#searchKeyword').val().trim();
+            if (currentSearchKeyword) {
+                loadMessages();
+            }
+        }
+
+        // 清除搜索
+        function clearSearch() {
+            currentSearchKeyword = null;
+            $('#searchKeyword').val('');
+            loadMessages();
+        }
+
+        // 处理键盘事件
+        function handleKeyDown(event) {
+            if (event.keyCode == 13 && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 滚动到底部
+        function scrollToBottom() {
+            let messagesDiv = $('#chatMessages');
+            messagesDiv.scrollTop(messagesDiv[0].scrollHeight);
+        }
+
+        // 显示图片
+        function showImage(url) {
+            window.open(url, '_blank');
+        }
+
+        // 格式化时间
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            let date = new Date(timeStr);
+            let now = new Date();
+            let diff = now - date;
+            
+            if (diff < 60000) {
+                return '刚刚';
+            } else if (diff < 3600000) {
+                return Math.floor(diff / 60000) + '分钟前';
+            } else if (diff < 86400000) {
+                return Math.floor(diff / 3600000) + '小时前';
+            } else {
+                return date.getMonth() + 1 + '-' + date.getDate() + ' ' + 
+                       String(date.getHours()).padStart(2, '0') + ':' + 
+                       String(date.getMinutes()).padStart(2, '0');
+            }
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            if (!text) return '';
+            let map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // 删除会话
+        function deleteConversation(otherUserId, orderId, conversationInfo) {
+            let confirmText = '确定要删除会话 "' + conversationInfo + '" 吗？\n删除后将无法恢复所有聊天记录。';
+            if (!confirm(confirmText)) {
+                return;
+            }
+            
+            $.ajax({
+                url: '/api/message/conversation/delete',
+                type: 'POST',
+                data: {
+                    otherUserId: otherUserId,
+                    relatedOrderId: orderId || null
+                },
+                success: function(result) {
+                    if (result.code == 0) {
+                        // 如果删除的是当前会话，清空聊天区域
+                        if (currentOtherUserId == otherUserId && 
+                            ((orderId && currentOrderId == orderId) || (!orderId && !currentOrderId))) {
+                            currentOtherUserId = null;
+                            currentOrderId = null;
+                            $('#chatUserName').text('请选择联系人');
+                            $('#chatMessages').html('<div class="empty-state">请从左侧选择联系人开始聊天</div>');
+                            $('#selectedOrderInfo').text('');
+                            $('#cancelOrderBtn').hide();
+                            $('#orderSelectArea').hide();
+                        }
+                        // 重新加载会话列表
+                        loadConversations();
+                    } else {
+                        alert('删除失败: ' + result.msg);
+                    }
+                },
+                error: function() {
+                    alert('删除失败，请重试');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

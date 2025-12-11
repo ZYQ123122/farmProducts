@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ExpertConsultationMapper">
+
+	<resultMap id="ExpertConsultationResult" type="com.ruoyi.system.domain.ExpertConsultation">
+		<id property="id" column="id" />
+		<result property="userId" column="user_id" />
+		<result property="expertId" column="expert_id" />
+		<result property="title" column="title" />
+		<result property="content" column="content" />
+		<result property="status" column="status" />
+		<result property="reply" column="reply" />
+		<result property="replyTime" column="reply_time" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+		<result property="isDeleted" column="is_deleted" />
+		<!-- 映射 BaseEntity 的字段，使用 created_at 作为 createTime -->
+		<result property="createTime" column="created_at" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		id, user_id, expert_id, title, content, status, reply, reply_time, created_at, updated_at, is_deleted
+	</sql>
+
+	<select id="selectExpertConsultationList" parameterType="com.ruoyi.system.domain.ExpertConsultation" resultMap="ExpertConsultationResult">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM expert_consultation
+		WHERE is_deleted = 0
+		<if test="userId != null">
+			AND user_id = #{userId}
+		</if>
+		<if test="expertId != null">
+			AND expert_id = #{expertId}
+		</if>
+		<if test="status != null and status != ''">
+			AND status = #{status}
+		</if>
+		<if test="title != null and title != ''">
+			AND title LIKE CONCAT('%', #{title}, '%')
+		</if>
+		ORDER BY created_at DESC
+	</select>
+
+	<select id="selectConsultationListByUserId" resultMap="ExpertConsultationResult">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM expert_consultation
+		WHERE is_deleted = 0
+		AND user_id = #{userId}
+		<if test="status != null and status != ''">
+			AND status = #{status}
+		</if>
+		ORDER BY created_at DESC
+	</select>
+
+	<select id="selectConsultationListByExpertId" resultMap="ExpertConsultationResult">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM expert_consultation
+		WHERE is_deleted = 0
+		AND expert_id = #{expertId}
+		<if test="status != null and status != ''">
+			AND status = #{status}
+		</if>
+		ORDER BY created_at DESC
+	</select>
+
+	<select id="selectExpertConsultationById" parameterType="Long" resultMap="ExpertConsultationResult">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM expert_consultation
+		WHERE id = #{id}
+		AND is_deleted = 0
+	</select>
+
+	<select id="selectExpertConsultationByIdAndUserId" resultMap="ExpertConsultationResult">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM expert_consultation
+		WHERE id = #{id}
+		AND user_id = #{userId}
+		AND is_deleted = 0
+	</select>
+
+	<insert id="insertExpertConsultation" parameterType="com.ruoyi.system.domain.ExpertConsultation" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO expert_consultation
+		(user_id, expert_id, title, content, status, created_at, updated_at, is_deleted)
+		VALUES
+		(#{userId}, #{expertId}, #{title}, #{content}, #{status}, NOW(), NOW(), #{isDeleted})
+	</insert>
+
+	<update id="updateExpertConsultation" parameterType="com.ruoyi.system.domain.ExpertConsultation">
+		UPDATE expert_consultation
+		<set>
+			<if test="title != null and title != ''">title = #{title},</if>
+			<if test="content != null and content != ''">content = #{content},</if>
+			<if test="status != null and status != ''">status = #{status},</if>
+			updated_at = NOW()
+		</set>
+		WHERE id = #{id}
+		AND is_deleted = 0
+	</update>
+
+	<update id="replyConsultation">
+		UPDATE expert_consultation
+		SET reply = #{reply},
+			status = 'answered',
+			reply_time = NOW(),
+			updated_at = NOW()
+		WHERE id = #{id}
+		AND expert_id = #{expertId}
+		AND is_deleted = 0
+	</update>
+
+	<update id="softDeleteExpertConsultation">
+		UPDATE expert_consultation
+		SET is_deleted = 1,
+			updated_at = NOW()
+		WHERE id = #{id}
+		AND user_id = #{userId}
+		AND is_deleted = 0
+	</update>
+
+	<update id="changeConsultationStatus">
+		UPDATE expert_consultation
+		SET status = #{status},
+			updated_at = NOW()
+		WHERE id = #{id}
+		AND is_deleted = 0
+	</update>
+
+</mapper>
+
+

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.MessageMapper">
+
+	<resultMap type="com.ruoyi.system.domain.Message" id="MessageResult">
+		<id     property="id"            column="id"              />
+		<result property="senderId"     column="sender_id"       />
+		<result property="receiverId"  column="receiver_id"    />
+		<result property="content"      column="content"         />
+		<result property="relatedOrderId" column="related_order_id" />
+		<result property="relatedDemandId" column="related_demand_id" />
+		<result property="messageType" column="message_type"    />
+		<result property="fileUrl"      column="file_url"        />
+		<result property="fileName"     column="file_name"       />
+		<result property="isRead"       column="is_read"        />
+		<result property="createdAt"    column="created_at"      />
+		<result property="senderName"   column="sender_name"     />
+		<result property="receiverName" column="receiver_name"   />
+		<result property="senderRole"   column="sender_role"     />
+		<result property="receiverRole" column="receiver_role"   />
+		<result property="orderInfo"    column="order_info"      />
+		<result property="demandInfo"   column="demand_info"     />
+		<result property="unreadCount"  column="unread_count"    />
+	</resultMap>
+
+	<sql id="selectMessageVo">
+		select m.id, m.sender_id, m.receiver_id, m.content, m.related_order_id, m.related_demand_id,
+		       m.message_type, m.file_url, m.file_name, m.is_read, m.created_at,
+		       su1.username as sender_name, su2.username as receiver_name,
+		       su1.role as sender_role, su2.role as receiver_role,
+		       concat('订单#', o.id, ' - ', fp.name) as order_info,
+		       concat('需求#', br.id, ' - ', br.product_name) as demand_info
+		from messages m
+		left join sys_user su1 on m.sender_id = su1.id
+		left join sys_user su2 on m.receiver_id = su2.id
+		left join orders o on m.related_order_id = o.id
+		left join farmer_product fp on o.product_id = fp.id
+		left join buyer_requirement br on m.related_demand_id = br.id
+	</sql>
+
+	<select id="selectMessageById" parameterType="Long" resultMap="MessageResult">
+		<include refid="selectMessageVo"/>
+		where m.id = #{id}
+	</select>
+
+	<select id="selectMessageList" parameterType="Message" resultMap="MessageResult">
+		<include refid="selectMessageVo"/>
+		<where>
+			<if test="senderId != null">
+				AND m.sender_id = #{senderId}
+			</if>
+			<if test="receiverId != null">
+				AND m.receiver_id = #{receiverId}
+			</if>
+			<if test="relatedOrderId != null">
+				AND m.related_order_id = #{relatedOrderId}
+			</if>
+			<if test="relatedDemandId != null">
+				AND m.related_demand_id = #{relatedDemandId}
+			</if>
+			<if test="messageType != null and messageType != ''">
+				AND m.message_type = #{messageType}
+			</if>
+			<if test="isRead != null">
+				AND m.is_read = #{isRead}
+			</if>
+		</where>
+		order by m.created_at desc
+	</select>
+
+	<select id="selectConversationMessages" resultMap="MessageResult">
+		<include refid="selectMessageVo"/>
+		where ((m.sender_id = #{userId1} AND m.receiver_id = #{userId2})
+		   OR (m.sender_id = #{userId2} AND m.receiver_id = #{userId1}))
+		<if test="relatedOrderId != null">
+			AND m.related_order_id = #{relatedOrderId}
+		</if>
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND m.content LIKE CONCAT('%', #{searchKeyword}, '%')
+		</if>
+		order by m.created_at asc
+	</select>
+
+	<select id="selectConversationList" parameterType="Long" resultMap="MessageResult">
+		select m.id, m.sender_id, m.receiver_id, m.content, m.related_order_id, m.related_demand_id,
+		       m.message_type, m.file_url, m.file_name, m.is_read, m.created_at,
+		       su1.username as sender_name, 
+		       su2.username as receiver_name,
+		       su1.role as sender_role,
+		       su2.role as receiver_role,
+		       concat('订单#', o.id, ' - ', fp.name) as order_info,
+		       concat('需求#', br.id, ' - ', br.product_name) as demand_info,
+		       COALESCE(unread.unread_count, 0) as unread_count
+		from (
+			select 
+				case when sender_id = #{userId} then receiver_id else sender_id end as other_user_id,
+				COALESCE(related_order_id, 0) as order_id,
+				max(created_at) as max_time
+			from messages
+			where sender_id = #{userId} OR receiver_id = #{userId}
+			group by 
+				case when sender_id = #{userId} then receiver_id else sender_id end,
+				COALESCE(related_order_id, 0)
+		) latest
+		inner join messages m on (
+			(m.sender_id = #{userId} AND m.receiver_id = latest.other_user_id)
+			OR (m.sender_id = latest.other_user_id AND m.receiver_id = #{userId})
+		) AND COALESCE(m.related_order_id, 0) = latest.order_id
+		AND m.created_at = latest.max_time
+		left join sys_user su1 on m.sender_id = su1.id
+		left join sys_user su2 on m.receiver_id = su2.id
+		left join orders o on m.related_order_id = o.id
+		left join farmer_product fp on o.product_id = fp.id
+		left join buyer_requirement br on m.related_demand_id = br.id
+		left join (
+			select 
+				case when sender_id = #{userId} then receiver_id else sender_id end as other_user_id,
+				COALESCE(related_order_id, 0) as order_id,
+				count(*) as unread_count
+			from messages
+			where receiver_id = #{userId} AND is_read = 0
+			group by 
+				case when sender_id = #{userId} then receiver_id else sender_id end,
+				COALESCE(related_order_id, 0)
+		) unread on (
+			latest.other_user_id = unread.other_user_id 
+			AND latest.order_id = unread.order_id
+		)
+		order by m.created_at desc
+	</select>
+
+	<insert id="insertMessage" parameterType="Message" useGeneratedKeys="true" keyProperty="id">
+		insert into messages(
+			sender_id, receiver_id, content, related_order_id, related_demand_id,
+			message_type, file_url, file_name, is_read, created_at
+		)values(
+			#{senderId}, #{receiverId}, #{content}, 
+			#{relatedOrderId}, #{relatedDemandId},
+			#{messageType}, #{fileUrl}, #{fileName}, 0, now()
+		)
+	</insert>
+
+	<update id="updateMessage" parameterType="Message">
+		update messages
+		<set>
+			<if test="content != null and content != ''">content = #{content},</if>
+			<if test="isRead != null">is_read = #{isRead},</if>
+		</set>
+		where id = #{id}
+	</update>
+
+	<delete id="deleteMessageById" parameterType="Long">
+		delete from messages where id = #{id}
+	</delete>
+
+	<delete id="deleteMessageByIds" parameterType="Long">
+		delete from messages where id in
+		<foreach collection="array" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+
+	<update id="markMessagesAsRead">
+		update messages set is_read = 1
+		where receiver_id = #{receiverId} AND sender_id = #{senderId} AND is_read = 0
+		<if test="relatedOrderId != null">
+			AND related_order_id = #{relatedOrderId}
+		</if>
+		<if test="relatedOrderId == null">
+			AND related_order_id IS NULL
+		</if>
+	</update>
+
+	<select id="countUnreadMessages" resultType="int">
+		select count(*) from messages
+		where receiver_id = #{receiverId} AND is_read = 0
+		<if test="senderId != null">
+			AND sender_id = #{senderId}
+		</if>
+	</select>
+
+	<delete id="deleteConversation">
+		delete from messages
+		where ((sender_id = #{userId1} AND receiver_id = #{userId2})
+		   OR (sender_id = #{userId2} AND receiver_id = #{userId1}))
+		<if test="relatedOrderId != null">
+			AND related_order_id = #{relatedOrderId}
+		</if>
+		<if test="relatedOrderId == null">
+			AND related_order_id IS NULL
+		</if>
+	</delete>
+
+</mapper>
+

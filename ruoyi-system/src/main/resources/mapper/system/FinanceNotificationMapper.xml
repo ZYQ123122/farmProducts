@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FinanceNotificationMapper">
+
+    <resultMap id="FinanceNotificationResult" type="com.ruoyi.system.domain.FinanceNotification">
+        <id     property="id"              column="id"/>
+        <result property="applicationId"   column="application_id"/>
+        <result property="userId"          column="user_id"/>
+        <result property="notificationType" column="notification_type"/>
+        <result property="title"           column="title"/>
+        <result property="content"        column="content"/>
+        <result property="isRead"         column="is_read"/>
+        <result property="createTime"     column="create_time"/>
+        <result property="readTime"       column="read_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, application_id, user_id, notification_type, title, content, is_read, create_time, read_time
+    </sql>
+
+    <select id="selectFinanceNotificationById" parameterType="Long" resultMap="FinanceNotificationResult">
+        SELECT <include refid="Base_Column_List"/>
+        FROM finance_notification
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectNotificationListByUserId" parameterType="Long" resultMap="FinanceNotificationResult">
+        SELECT <include refid="Base_Column_List"/>
+        FROM finance_notification
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countUnreadNotifications" parameterType="Long" resultType="int">
+        SELECT COUNT(*)
+        FROM finance_notification
+        WHERE user_id = #{userId} AND is_read = '0'
+    </select>
+
+    <insert id="insertFinanceNotification" parameterType="com.ruoyi.system.domain.FinanceNotification" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO finance_notification (application_id, user_id, notification_type, title, content, is_read, create_time)
+        VALUES (#{applicationId}, #{userId}, #{notificationType}, #{title}, #{content}, #{isRead}, NOW())
+    </insert>
+
+    <update id="markAsRead" parameterType="Long">
+        UPDATE finance_notification
+        SET is_read = '1', read_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="markAllAsRead" parameterType="Long">
+        UPDATE finance_notification
+        SET is_read = '1', read_time = NOW()
+        WHERE user_id = #{userId} AND is_read = '0'
+    </update>
+
+    <delete id="deleteFinanceNotificationById" parameterType="Long">
+        DELETE FROM finance_notification WHERE id = #{id}
+    </delete>
+
+</mapper>
+

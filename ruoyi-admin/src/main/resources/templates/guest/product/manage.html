@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>贷款产品管理</title>
+  <th:block th:include="include :: header('贷款产品管理')" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+  <div class="row">
+    <div class="col-sm-12 search-collapse">
+      <a class="btn btn-primary btn-rounded btn-sm" onclick="addProduct()"><i class="fa fa-plus"></i>&nbsp;新增产品</a>
+    </div>
+    <div class="col-sm-12 select-table table-striped">
+      <table id="bootstrap-table"></table>
+    </div>
+  </div>
+</div>
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+  var prefix = ctx + "system/bank/product";
+
+  $(function () {
+    var options = {
+      url: prefix + "/list",
+      modalName: "贷款产品",
+      columns: [
+        {checkbox: true},
+        {field: 'id', title: '编号', width: 80},
+        {field: 'productName', title: '产品名称', width: 150},
+        {field: 'productCode', title: '产品代码', width: 120},
+        {field: 'minAmount', title: '最小金额（元）', width: 120, formatter: function(value) {
+            if (!value && value !== 0) return '0.00';
+            var num = typeof value === 'string' ? parseFloat(value) : value;
+            return isNaN(num) ? '0.00' : num.toFixed(2);
+          }},
+        {field: 'maxAmount', title: '最大金额（元）', width: 120, formatter: function(value) {
+            if (!value && value !== 0) return '0.00';
+            var num = typeof value === 'string' ? parseFloat(value) : value;
+            return isNaN(num) ? '0.00' : num.toFixed(2);
+          }},
+        {field: 'minTermMonths', title: '最短期限（月）', width: 100},
+        {field: 'maxTermMonths', title: '最长期限（月）', width: 100},
+        {field: 'interestRate', title: '年利率（%）', width: 100, formatter: function(value) {
+            if (!value && value !== 0) return '面议';
+            var num = typeof value === 'string' ? parseFloat(value) : value;
+            return isNaN(num) ? '面议' : num + '%';
+          }},
+        {
+          field: 'status',
+          title: '状态',
+          align: 'center',
+          width: 80,
+          formatter: function (value) {
+            if (value === '1') return '<span class="label label-success">上架</span>';
+            if (value === '0') return '<span class="label label-default">下架</span>';
+            return value || '';
+          }
+        },
+        {field: 'createTime', title: '创建时间', width: 160, sortable: true},
+        {
+          title: '操作',
+          align: 'center',
+          width: 200,
+          formatter: function (value, row, index) {
+            var actions = [];
+            actions.push('<a class="btn btn-primary btn-xs" href="javascript:void(0)" onclick="editProduct(' + row.id + ')"><i class="fa fa-edit"></i> 编辑</a> ');
+            if (row.status === '1') {
+              actions.push('<a class="btn btn-warning btn-xs" href="javascript:void(0)" onclick="changeStatus(' + row.id + ', \'0\')"><i class="fa fa-arrow-down"></i> 下架</a> ');
+            } else {
+              actions.push('<a class="btn btn-success btn-xs" href="javascript:void(0)" onclick="changeStatus(' + row.id + ', \'1\')"><i class="fa fa-arrow-up"></i> 上架</a> ');
+            }
+            actions.push('<a class="btn btn-danger btn-xs" href="javascript:void(0)" onclick="removeProduct(' + row.id + ')"><i class="fa fa-remove"></i> 删除</a>');
+            return actions.join('');
+          }
+        }
+      ]
+    };
+    $.table.init(options);
+  });
+
+  function addProduct() {
+    $.modal.open("新增贷款产品", ctx + "guest/product/add");
+  }
+
+  function editProduct(id) {
+    $.modal.open("编辑贷款产品", ctx + "guest/product/edit?id=" + id);
+  }
+
+  function changeStatus(id, status) {
+    var statusText = status === '1' ? '上架' : '下架';
+    $.modal.confirm("确认" + statusText + "该产品吗？", function() {
+      $.ajax({
+        url: prefix + "/edit",
+        type: "POST",
+        data: {
+          id: id,
+          status: status
+        },
+        success: function(result) {
+          if (result.code == web_status.SUCCESS) {
+            $.modal.msgSuccess("操作成功");
+            $.table.refresh();
+          } else {
+            $.modal.alertError(result.msg || "操作失败");
+          }
+        }
+      });
+    });
+  }
+
+  function removeProduct(id) {
+    $.modal.confirm("确认删除该产品吗？", function() {
+      $.ajax({
+        url: prefix + "/remove",
+        type: "POST",
+        data: {
+          ids: id
+        },
+        success: function(result) {
+          if (result.code == web_status.SUCCESS) {
+            $.modal.msgSuccess("删除成功");
+            $.table.refresh();
+          } else {
+            $.modal.alertError(result.msg || "删除失败");
+          }
+        }
+      });
+    });
+  }
+</script>
+</body>
+</html>

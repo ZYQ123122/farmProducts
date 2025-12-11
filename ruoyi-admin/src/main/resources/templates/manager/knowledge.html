@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知识库管理</title>
+  <th:block th:include="include :: header('知识库管理')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    .knowledge-page { padding: 8px 0 0 0; }
+    .knowledge-toolbar { margin-bottom: 6px; }
+    .category-filter { margin-bottom: 6px; }
+    #knowledgeContainer { margin-top: 0; }
+    .knowledge-card {
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      background: #fff;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      transition: box-shadow 0.3s;
+    }
+    .knowledge-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .knowledge-card h4 { margin: 0 0 10px 0; font-size: 18px; color: #333; }
+    .knowledge-card .knowledge-content {
+      color: #666;
+      margin-bottom: 10px;
+      line-height: 1.6;
+      max-height: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .knowledge-card .knowledge-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #999;
+      padding-top: 8px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .knowledge-card .knowledge-tags { margin-bottom: 6px; }
+    .knowledge-tag {
+      display: inline-block;
+      background: #e8f4f8;
+      color: #31708f;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      margin-right: 5px;
+    }
+    .knowledge-empty {
+      text-align: center;
+      padding: 60px 0;
+      color: #999;
+      background: #fff;
+      border: 1px dashed #d9d9d9;
+      border-radius: 4px;
+    }
+    .category-filter .btn { margin-right: 5px; margin-bottom: 3px; }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="container-div knowledge-page">
+  <div class="row knowledge-toolbar">
+    <div class="col-sm-8">
+      <button class="btn btn-success btn-sm" id="btnAdd"><i class="fa fa-plus"></i> 新增知识</button>
+    </div>
+    <div class="col-sm-4">
+      <div class="input-group" style="width: 100%;">
+        <input type="text" class="form-control" id="searchInput" placeholder="搜索标题">
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="button" id="btnSearch"><i class="fa fa-search"></i> 搜索</button>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="category-filter">
+    <button type="button" class="btn btn-default active" data-category="all">全部</button>
+    <button type="button" class="btn btn-default" data-category="planting">种植技术</button>
+    <button type="button" class="btn btn-default" data-category="breeding">养殖技术</button>
+    <button type="button" class="btn btn-default" data-category="pest">病虫害防治</button>
+    <button type="button" class="btn btn-default" data-category="market">市场信息</button>
+    <button type="button" class="btn btn-default" data-category="other">其他</button>
+  </div>
+  <div id="knowledgeContainer"></div>
+</div>
+
+<!-- 新增/编辑知识模态框 -->
+<div class="modal fade" id="knowledgeModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="knowledgeModalTitle">新增知识</h4>
+      </div>
+      <div class="modal-body">
+        <form id="knowledgeForm" class="form-horizontal">
+          <input type="hidden" id="knowledgeId">
+          <div class="form-group">
+            <label class="col-sm-2 control-label is-required">标题：</label>
+            <div class="col-sm-9">
+              <input type="text" class="form-control" id="knowledgeTitle" maxlength="200" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label is-required">分类：</label>
+            <div class="col-sm-9">
+              <select class="form-control" id="knowledgeCategory" required>
+                <option value="planting">种植技术</option>
+                <option value="breeding">养殖技术</option>
+                <option value="pest">病虫害防治</option>
+                <option value="market">市场信息</option>
+                <option value="other">其他</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label">标签：</label>
+            <div class="col-sm-9">
+              <input type="text" class="form-control" id="knowledgeTags" placeholder="多个标签用逗号分隔">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label is-required">内容：</label>
+            <div class="col-sm-9">
+              <textarea class="form-control" id="knowledgeContent" rows="10" required></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" id="btnSaveKnowledge">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<th:block th:include="include :: layout-latest-js" />
+<script th:inline="javascript">
+  var currentCategory = 'all';
+  var prefix = ctx + "system/knowledge";
+
+  $(function () {
+    loadKnowledge();
+
+    $('#btnSearch').click(function () {
+      loadKnowledge();
+    });
+
+    $('#searchInput').keypress(function (e) {
+      if (e.which === 13) {
+        loadKnowledge();
+      }
+    });
+
+    $('.category-filter .btn').click(function () {
+      $('.category-filter .btn').removeClass('active');
+      $(this).addClass('active');
+      currentCategory = $(this).data('category');
+      loadKnowledge();
+    });
+
+    $('#btnAdd').click(function () {
+      resetForm();
+      $('#knowledgeModalTitle').text('新增知识');
+      $('#knowledgeModal').modal('show');
+    });
+
+    $('#btnSaveKnowledge').click(function () {
+      if (!$('#knowledgeTitle').val()) {
+        $.modal.alertWarning("请输入标题");
+        return;
+      }
+      if (!$('#knowledgeContent').val()) {
+        $.modal.alertWarning("请输入内容");
+        return;
+      }
+      saveKnowledge();
+    });
+  });
+
+  function loadKnowledge() {
+    $.ajax({
+      url: prefix + "/myList",
+      type: "GET",
+      data: {
+        category: currentCategory === 'all' ? '' : currentCategory,
+        keyword: $('#searchInput').val() || ''
+      },
+      success: function (result) {
+        console.log("知识列表接口返回:", result);
+        // 兼容不同的返回格式：result.code 或 result.code === 0
+        if ((result.code === web_status.SUCCESS) || (result.code === 0) || (result.code == 0)) {
+          // 兼容不同的数据字段：result.data 或 result.rows
+          var data = result.data || result.rows || [];
+          console.log("知识数据:", data, "数量:", data.length);
+          if (Array.isArray(data)) {
+            renderKnowledge(data);
+          } else {
+            console.error("数据格式错误，不是数组:", data);
+            renderKnowledge([]);
+          }
+        } else {
+          console.error("接口返回错误:", result);
+          $.modal.alertError(result.msg || "加载知识列表失败");
+          renderKnowledge([]);
+        }
+      },
+      error: function (xhr, status, error) {
+        console.error("接口调用失败:", status, error);
+        $.modal.alertError("加载知识列表失败");
+        renderKnowledge([]);
+      }
+    });
+  }
+
+  function renderKnowledge(list) {
+    var container = $('#knowledgeContainer');
+    container.empty();
+
+    console.log("开始渲染知识列表，数据:", list, "数量:", list ? list.length : 0);
+
+    if (!list || list.length === 0) {
+      container.html('<div class="knowledge-empty"><i class="fa fa-book"></i><p>暂无知识，请先新增。</p></div>');
+      return;
+    }
+
+    list.forEach(function (item) {
+      console.log("渲染知识项:", item);
+      var tagsHtml = '';
+      if (item.tags) {
+        var tags = typeof item.tags === 'string' ? item.tags.split(',') : item.tags;
+        tags.forEach(function (tag) {
+          var t = (tag || '').trim();
+          if (t) {
+            tagsHtml += '<span class="knowledge-tag">' + t + '</span>';
+          }
+        });
+      }
+
+      var categoryName =
+              item.categoryName ||
+              (item.category === 'planting' ? '种植技术' :
+                      item.category === 'breeding' ? '养殖技术' :
+                              item.category === 'pest' ? '病虫害防治' :
+                                      item.category === 'market' ? '市场信息' : '其他');
+
+      var publishTime = item.publishTime || item.createTime || '';
+      if (publishTime && publishTime.length > 10) {
+        publishTime = publishTime.substring(0, 10);
+      }
+
+      var content = item.content || '';
+      if (content.length > 100) {
+        content = content.substring(0, 100) + '...';
+      }
+
+      var cardHtml = '<div class="knowledge-card" data-id="' + item.id + '">' +
+              '<h4>' + (item.title || '无标题') + '</h4>' +
+              (tagsHtml ? '<div class="knowledge-tags">' + tagsHtml + '</div>' : '') +
+              '<div class="knowledge-content">' + content + '</div>' +
+              '<div class="knowledge-meta">' +
+              '<span><i class="fa fa-folder"></i> ' + categoryName + '</span>' +
+              '<span>' + publishTime +
+              ' <a href="javascript:void(0)" onclick="editKnowledge(' + item.id + ')"><i class="fa fa-edit"></i> 编辑</a> ' +
+              '<a href="javascript:void(0)" onclick="deleteKnowledge(' + item.id + ')"><i class="fa fa-trash"></i> 删除</a>' +
+              '</span>' +
+              '</div>' +
+              '</div>';
+
+      container.append(cardHtml);
+    });
+  }
+
+  function resetForm() {
+    $('#knowledgeForm')[0].reset();
+    $('#knowledgeId').val('');
+  }
+
+  function editKnowledge(id) {
+    $.ajax({
+      url: prefix + "/detail/" + id,
+      type: "GET",
+      success: function (result) {
+        if (result.code === web_status.SUCCESS) {
+          var d = result.data;
+          $('#knowledgeId').val(d.id);
+          $('#knowledgeTitle').val(d.title);
+          $('#knowledgeCategory').val(d.category || 'other');
+          $('#knowledgeTags').val(d.tags || '');
+          $('#knowledgeContent').val(d.content || '');
+          $('#knowledgeModalTitle').text('编辑知识');
+          $('#knowledgeModal').modal('show');
+        } else {
+          $.modal.alertError(result.msg || "加载知识详情失败");
+        }
+      },
+      error: function () {
+        $.modal.alertError("加载知识详情失败");
+      }
+    });
+  }
+
+  function saveKnowledge() {
+    var data = {
+      id: $('#knowledgeId').val() || null,
+      title: $('#knowledgeTitle').val(),
+      category: $('#knowledgeCategory').val(),
+      tags: $('#knowledgeTags').val(),
+      content: $('#knowledgeContent').val()
+    };
+
+    $.ajax({
+      url: prefix + "/save",
+      type: "POST",
+      data: data,
+      success: function (result) {
+        if (result.code === web_status.SUCCESS) {
+          $.modal.msgSuccess("保存成功");
+          $('#knowledgeModal').modal('hide');
+          loadKnowledge();
+        } else {
+          $.modal.alertError(result.msg || "保存失败");
+        }
+      },
+      error: function () {
+        $.modal.alertError("保存失败");
+      }
+    });
+  }
+
+  function deleteKnowledge(id) {
+    $.modal.confirm("确定要删除这条知识吗？", function () {
+      $.ajax({
+        url: prefix + "/delete",
+        type: "POST",
+        data: { id: id },
+        success: function (result) {
+          if (result.code === web_status.SUCCESS) {
+            $.modal.msgSuccess("删除成功");
+            loadKnowledge();
+          } else {
+            $.modal.alertError(result.msg || "删除失败");
+          }
+        },
+        error: function () {
+          $.modal.alertError("删除失败");
+        }
+      });
+    });
+  }
+</script>
+</body>
+</html>
+
