@@ -20,7 +20,7 @@ import com.ruoyi.system.service.ISysUserService;
 
 /**
  * 用户信息Controller
- * 
+ *
  * @author ruoyi
  */
 @Controller
@@ -187,4 +187,3 @@ public class SysUserController extends BaseController
         return new java.util.ArrayList<>();
     }
 }
-

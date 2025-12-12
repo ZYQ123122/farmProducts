@@ -14,6 +14,8 @@ import com.ruoyi.common.utils.StringUtils;
 import org.apache.shiro.crypto.hash.Md5Hash;
 import com.ruoyi.system.mapper.SysUserMapper;
 import com.ruoyi.system.service.ISysUserService;
+import com.ruoyi.system.service.IBankInfoService;
+import com.ruoyi.system.domain.BankInfo;
 
 /**
  * 用户 业务层处理
@@ -28,6 +30,9 @@ public class SysUserServiceImpl implements ISysUserService
 
     @Autowired
     protected Validator validator;
+
+    @Autowired
+    private IBankInfoService bankInfoService;
 
     /**
      * 加密密码（新表结构：使用MD5加密 username + password）
@@ -158,6 +163,7 @@ public class SysUserServiceImpl implements ISysUserService
      * @return 结果
      */
     @Override
+    @Transactional
     public boolean registerUser(SysUser user)
     {
         // 密码已经在SysRegisterService中加密过了，这里不再重复加密
@@ -167,7 +173,43 @@ public class SysUserServiceImpl implements ISysUserService
             String username = StringUtils.isNotEmpty(user.getUsername()) ? user.getUsername() : user.getLoginName();
             user.setPasswordHash(encryptPassword(username, user.getPassword()));
         }
-        return userMapper.insertUser(user) > 0;
+        
+        // 插入用户
+        int result = userMapper.insertUser(user);
+        if (result <= 0)
+        {
+            return false;
+        }
+        
+        // 如果是银行用户，自动创建银行信息记录
+        if ("bank".equals(user.getRole()) && bankInfoService != null)
+        {
+            // 检查是否已存在银行信息（防止重复创建）
+            BankInfo existingBank = bankInfoService.selectBankInfoByUserId(user.getId());
+            if (existingBank == null)
+            {
+                BankInfo bankInfo = new BankInfo();
+                // 生成银行代码：使用用户ID确保唯一性，格式为 BANK + 用户ID
+                String bankCode = "BANK" + String.format("%06d", user.getId());
+                bankInfo.setBankCode(bankCode);
+                // 使用用户名作为银行名称，如果没有则使用默认值
+                String username = StringUtils.isNotEmpty(user.getUsername()) ? user.getUsername() : user.getLoginName();
+                bankInfo.setBankName(StringUtils.isNotEmpty(user.getName()) ? user.getName() + "银行" : username + "银行");
+                bankInfo.setUserId(user.getId());
+                // 使用用户信息填充联系信息
+                bankInfo.setContactPerson(user.getName());
+                bankInfo.setContactPhone(user.getPhone());
+                bankInfo.setContactEmail(user.getEmail());
+                bankInfo.setAddress(user.getContact());
+                bankInfo.setStatus("0"); // 默认正常状态
+                bankInfo.setCreateBy(username);
+                
+                // 创建银行信息记录
+                bankInfoService.insertBankInfo(bankInfo);
+            }
+        }
+        
+        return true;
     }
 
     /**

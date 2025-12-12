@@ -9,24 +9,22 @@
 <body class="gray-bg">
 <div class="container-div">
   <div class="row">
-    <div class="col-sm-12">
-      <div class="ibox">
-        <div class="ibox-title">
-          <h5>我的融资申请记录</h5>
-        </div>
-        <div class="ibox-content">
-          <div class="btn-group-sm" id="toolbar" role="group">
-            <button class="btn btn-default" onclick="reload('')">全部</button>
-            <button class="btn btn-warning" onclick="reload('submitted')">已提交</button>
-            <button class="btn btn-info" onclick="reload('in_review')">审批中</button>
-            <button class="btn btn-success" onclick="reload('approved')">已通过</button>
-            <button class="btn btn-danger" onclick="reload('rejected')">已拒绝</button>
-          </div>
-          <div class="col-sm-12 select-table table-striped">
-            <table id="bootstrap-table"></table>
-          </div>
-        </div>
+    <div class="col-sm-12" style="margin-bottom: 15px;">
+      <h5 style="margin-top: 0; margin-bottom: 10px;">我的融资申请记录</h5>
+      <div class="btn-group-sm" role="group">
+        <button type="button" class="btn btn-default" onclick="reload('')">全部</button>
+        <button type="button" class="btn btn-warning" onclick="reload('submitted')">已提交</button>
+        <button type="button" class="btn btn-info" onclick="reload('in_review')">审批中</button>
+        <button type="button" class="btn btn-success" onclick="reload('approved')">已通过</button>
+        <button type="button" class="btn btn-danger" onclick="reload('rejected')">已拒绝</button>
       </div>
+    </div>
+
+    <div class="btn-group-sm" id="toolbar" role="group" style="margin-bottom: 10px;">
+    </div>
+
+    <div class="col-sm-12 select-table table-striped">
+      <table id="bootstrap-table"></table>
     </div>
   </div>
 </div>

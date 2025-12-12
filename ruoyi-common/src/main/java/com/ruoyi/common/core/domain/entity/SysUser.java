@@ -298,6 +298,102 @@ public class SysUser extends BaseEntity
         this.updatedAt = updateTime;
     }
 
+    // 为了兼容旧代码，添加deptId相关方法（新表结构中没有部门概念）
+    private Long deptId;
+    
+    public Long getDeptId()
+    {
+        return deptId;
+    }
+
+    public void setDeptId(Long deptId)
+    {
+        this.deptId = deptId;
+    }
+
+    // 为了兼容旧代码，添加dept对象（新表结构中没有部门概念）
+    private Dept dept;
+    
+    public Dept getDept()
+    {
+        return dept;
+    }
+
+    public void setDept(Dept dept)
+    {
+        this.dept = dept;
+    }
+
+    // 内部类，用于兼容模板中的dept对象
+    public static class Dept
+    {
+        private Long deptId;
+        private String deptName;
+
+        public Long getDeptId()
+        {
+            return deptId;
+        }
+
+        public void setDeptId(Long deptId)
+        {
+            this.deptId = deptId;
+        }
+
+        public String getDeptName()
+        {
+            return deptName;
+        }
+
+        public void setDeptName(String deptName)
+        {
+            this.deptName = deptName;
+        }
+    }
+
+    // 为了兼容旧代码，添加status属性（新表结构中没有status字段，使用isVerified代替）
+    private String status;
+    
+    public String getStatus()
+    {
+        // 如果isVerified为1，返回"0"（正常），否则返回"1"（禁用）
+        if (isVerified != null && isVerified == 1)
+        {
+            return "0";
+        }
+        return "1";
+    }
+
+    public void setStatus(String status)
+    {
+        this.status = status;
+        // 同步更新isVerified：status="0"表示正常（isVerified=1），status="1"表示禁用（isVerified=0）
+        if ("0".equals(status))
+        {
+            this.isVerified = 1;
+        }
+        else
+        {
+            this.isVerified = 0;
+        }
+    }
+
+    // 为了兼容旧代码，添加sex属性（新表结构中没有sex字段）
+    private String sex;
+    
+    public String getSex()
+    {
+        return sex;
+    }
+
+    public void setSex(String sex)
+    {
+        this.sex = sex;
+    }
+
+    // 为了兼容旧代码，添加remark属性（继承自BaseEntity，但确保存在）
+    // BaseEntity中应该有remark字段，这里只是确保兼容性
+
     public boolean isAdmin()
     {
         return isAdmin(this.id);
