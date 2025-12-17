@@ -10,7 +10,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 角色信息Controller
- * 
+ *
  * @author ruoyi
  */
 @Controller
@@ -37,4 +37,3 @@ public class SysRoleController extends BaseController
         return getDataTable(new java.util.ArrayList<>());
     }
 }
-
