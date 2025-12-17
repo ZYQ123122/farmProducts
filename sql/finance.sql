@@ -111,3 +111,6 @@ CREATE TABLE finance_notification (
                                       CONSTRAINT fk_finance_notification_user FOREIGN KEY (user_id) REFERENCES sys_user (id),
                                       CONSTRAINT fk_finance_notification_app FOREIGN KEY (application_id) REFERENCES finance_application (id)
 ) ENGINE=InnoDB COMMENT='融资通知表';
+
+INSERT INTO bank_info (bank_code, bank_name, user_id, contact_person, contact_phone, contact_email, address, status, remark, create_by, update_by) VALUES
+    ('ICBC001', '中国工商银行', 7, '李七', '13800138001', 'zhangsan@icbc.com', '北京市西城区复兴门内大街55号', '0', '总行', 'admin', 'admin');
