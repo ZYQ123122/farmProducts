@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysUserMatchMapper">
+
+    <!-- 通用查询结果列 -->
+    <sql id="selectUserMatchVo">
+        select m.id, m.user_id, m.area, m.category, m.demand_type, m.scale,
+               m.expert_field, m.bank_loan_type, m.match_score, m.match_user_id,
+               m.match_user_name, m.create_time, m.update_time,
+               u.user_name, u.user_type, u.status
+        from sys_user_match m
+                 left join sys_user u on m.user_id = u.user_id
+    </sql>
+
+    <!-- 查询指定类型的所有用户 -->
+    <select id="selectTargetUserList" parameterType="String" resultType="SysUserMatch">
+        <include refid="selectUserMatchVo"/>
+        where u.user_type = #{targetUserType}
+        and u.status = '0' <!-- 只查询启用状态的用户 -->
+    </select>
+
+    <!-- 根据用户ID查询匹配特征 -->
+    <select id="selectUserMatchByUserId" parameterType="Long" resultType="SysUserMatch">
+        <include refid="selectUserMatchVo"/>
+        where m.user_id = #{userId}
+    </select>
+
+    <!-- 新增用户匹配特征 -->
+    <insert id="insertUserMatch" parameterType="SysUserMatch" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_user_match
+        (user_id, area, category, demand_type, scale, expert_field, bank_loan_type, create_time, update_time)
+        values
+            (#{userId}, #{area}, #{category}, #{demandType}, #{scale}, #{expertField}, #{bankLoanType}, sysdate(), sysdate())
+    </insert>
+
+    <!-- 修改用户匹配特征 -->
+    <update id="updateUserMatch" parameterType="SysUserMatch">
+        update sys_user_match
+        set area = #{area},
+            category = #{category},
+            demand_type = #{demandType},
+            scale = #{scale},
+            expert_field = #{expertField},
+            bank_loan_type = #{bankLoanType},
+            update_time = sysdate()
+        where id = #{id}
+    </update>
+
+</mapper>
