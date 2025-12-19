@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <th:block th:include="include :: header('银行首页')" />
+  <style>
+    .bank-home-page {
+      padding: 20px 0;
+    }
+    .page-header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 30px 0;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .page-header h1 {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 0 0 10px 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .page-header .subtitle {
+      font-size: 18px;
+      opacity: 0.95;
+      margin: 0;
+    }
+    .image-carousel-container {
+      margin: 30px 0;
+      text-align: center;
+    }
+    .image-carousel {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 400px;
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      background: #f5f5f5;
+    }
+    .carousel-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+    .carousel-image.active {
+      opacity: 1;
+    }
+    .carousel-indicators {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    .carousel-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .carousel-indicator.active {
+      background: white;
+      width: 24px;
+      border-radius: 6px;
+    }
+    .platform-intro {
+      margin: 40px 0;
+      padding: 30px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .platform-intro h2 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-bottom: 3px solid #f5576c;
+      padding-bottom: 15px;
+    }
+    .platform-intro-content {
+      color: #555;
+      line-height: 1.8;
+      font-size: 16px;
+      text-align: justify;
+    }
+    .platform-intro-content p {
+      margin-bottom: 15px;
+    }
+    .platform-intro-content .highlight {
+      color: #f5576c;
+      font-weight: 600;
+    }
+    @media (max-width: 768px) {
+      .page-header h1 {
+        font-size: 28px;
+      }
+      .page-header .subtitle {
+        font-size: 16px;
+      }
+      .image-carousel {
+        height: 250px;
+      }
+      .platform-intro {
+        padding: 20px;
+      }
+      .platform-intro h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="wrapper wrapper-content animated fadeInRight bank-home-page">
+  <!-- 标题和副标题 -->
+  <div class="page-header">
+    <h1>银行工作台</h1>
+    <p class="subtitle">专业的农业金融服务平台，为农户提供融资支持</p>
+  </div>
+
+  <!-- 图片轮播框 -->
+  <div class="image-carousel-container">
+    <div class="image-carousel" id="imageCarousel">
+      <img th:src="@{/images/R.jpg}" alt="金融服务展示1" class="carousel-image active" id="image1">
+      <img th:src="@{/images/wadtlwuy.png}" alt="金融服务展示2" class="carousel-image" id="image2">
+      <div class="carousel-indicators">
+        <div class="carousel-indicator active" data-index="0"></div>
+        <div class="carousel-indicator" data-index="1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 平台简介 -->
+  <div class="platform-intro">
+    <h2>关于银行服务平台</h2>
+    <div class="platform-intro-content">
+      <p>
+        银行服务平台是一个专为金融机构和农户打造的<span class="highlight">专业农业金融服务平台</span>，致力于连接金融机构和农业经营者，提供便捷的融资申请、审批和管理服务，助力农业产业发展和乡村振兴。
+      </p>
+      <p>
+        <strong>平台核心功能：</strong>
+      </p>
+      <p>
+        • <span class="highlight">融资申请管理</span>：查看和管理农户提交的融资申请，实时掌握申请状态，高效处理融资需求，为农户提供及时的资金支持。
+      </p>
+      <p>
+        • <span class="highlight">融资审批</span>：专业的融资审批流程，支持在线审核、风险评估和决策，确保资金安全的同时为优质农业项目提供融资支持。
+      </p>
+      <p>
+        • <span class="highlight">产品管理</span>：管理银行金融产品，包括贷款产品、利率设置、产品信息维护等，为农户提供多样化的融资选择。
+      </p>
+      <p>
+        • <span class="highlight">风险控制</span>：完善的审核机制和风险控制体系，确保每一笔融资都经过严格审核，保障资金安全和业务合规。
+      </p>
+      <p>
+        我们致力于为金融机构提供<span class="highlight">专业的农业金融服务平台</span>，通过数字化手段提高融资效率，降低运营成本，让金融服务更好地服务于农业产业，助力乡村振兴和农业现代化发展。
+      </p>
+    </div>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+  (function() {
+    var currentIndex = 0;
+    var images = document.querySelectorAll('.carousel-image');
+    var indicators = document.querySelectorAll('.carousel-indicator');
+    var totalImages = images.length;
+
+    function showImage(index) {
+      // 隐藏所有图片
+      images.forEach(function(img) {
+        img.classList.remove('active');
+      });
+      // 显示当前图片
+      images[index].classList.add('active');
+      
+      // 更新指示器
+      indicators.forEach(function(indicator, i) {
+        if (i === index) {
+          indicator.classList.add('active');
+        } else {
+          indicator.classList.remove('active');
+        }
+      });
+    }
+
+    function nextImage() {
+      currentIndex = (currentIndex + 1) % totalImages;
+      showImage(currentIndex);
+    }
+
+    // 每5秒切换一次图片
+    setInterval(nextImage, 5000);
+
+    // 点击指示器切换图片
+    indicators.forEach(function(indicator, index) {
+      indicator.addEventListener('click', function() {
+        currentIndex = index;
+        showImage(currentIndex);
+      });
+    });
+  })();
+</script>
+</body>
+</html>
+
+

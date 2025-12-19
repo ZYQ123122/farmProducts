@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ExpertInfoMapper">
+    
+    <resultMap type="ExpertInfo" id="ExpertInfoResult">
+        <result property="id"            column="id"            />
+        <result property="userId"       column="user_id"      />
+        <result property="specialty"   column="specialty"    />
+        <result property="experience"  column="experience"   />
+        <result property="description"  column="description" />
+        <result property="expertise"    column="expertise"   />
+        <result property="achievements" column="achievements" />
+        <result property="avatar"      column="avatar"       />
+        <result property="status"       column="status"       />
+        <result property="auditStatus"  column="audit_status" />
+        <result property="sortOrder"    column="sort_order"   />
+        <result property="createBy"     column="create_by"    />
+        <result property="createTime"   column="create_time"  />
+        <result property="updateBy"     column="update_by"    />
+        <result property="updateTime"   column="update_time"  />
+        <result property="remark"       column="remark"       />
+    </resultMap>
+
+    <sql id="selectExpertInfoVo">
+        select id, user_id, specialty, experience, description, expertise, achievements, avatar, status, audit_status, sort_order, create_by, create_time, update_by, update_time, remark from expert_info
+    </sql>
+
+    <select id="selectExpertInfoList" parameterType="ExpertInfo" resultMap="ExpertInfoResult">
+        <include refid="selectExpertInfoVo"/>
+        <where>  
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="specialty != null  and specialty != ''"> and specialty like concat('%', #{specialty}, '%')</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="auditStatus != null  and auditStatus != ''"> and audit_status = #{auditStatus}</if>
+        </where>
+        order by sort_order asc, create_time desc
+    </select>
+    
+    <select id="selectExpertInfoById" parameterType="Long" resultMap="ExpertInfoResult">
+        <include refid="selectExpertInfoVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectExpertInfoByUserId" parameterType="Long" resultMap="ExpertInfoResult">
+        <include refid="selectExpertInfoVo"/>
+        where user_id = #{userId}
+    </select>
+        
+    <insert id="insertExpertInfo" parameterType="ExpertInfo" useGeneratedKeys="true" keyProperty="id">
+        insert into expert_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="specialty != null and specialty != ''">specialty,</if>
+            <if test="experience != null">experience,</if>
+            <if test="description != null">description,</if>
+            <if test="expertise != null">expertise,</if>
+            <if test="achievements != null">achievements,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="status != null">status,</if>
+            <if test="auditStatus != null">audit_status,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="remark != null">remark,</if>
+            create_time
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="specialty != null and specialty != ''">#{specialty},</if>
+            <if test="experience != null">#{experience},</if>
+            <if test="description != null">#{description},</if>
+            <if test="expertise != null">#{expertise},</if>
+            <if test="achievements != null">#{achievements},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="status != null">#{status},</if>
+            <if test="auditStatus != null">#{auditStatus},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="remark != null">#{remark},</if>
+            sysdate()
+         </trim>
+    </insert>
+
+    <update id="updateExpertInfo" parameterType="ExpertInfo">
+        update expert_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="specialty != null and specialty != ''">specialty = #{specialty},</if>
+            <if test="experience != null">experience = #{experience},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="expertise != null">expertise = #{expertise},</if>
+            <if test="achievements != null">achievements = #{achievements},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteExpertInfoById" parameterType="Long">
+        delete from expert_info where id = #{id}
+    </delete>
+
+    <delete id="deleteExpertInfoByIds" parameterType="String">
+        delete from expert_info where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
+

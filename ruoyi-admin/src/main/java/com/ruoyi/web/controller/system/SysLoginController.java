@@ -77,7 +77,7 @@ public class SysLoginController extends BaseController
     public AjaxResult doLogin(
             @RequestParam String username,
             @RequestParam String password,
-            @RequestParam(required = false, defaultValue = "admin") String role,
+            @RequestParam(required = false) String role,
             @RequestParam(required = false) String validateCode,
             @RequestParam(required = false) Boolean rememberMe,
             HttpServletRequest request,
@@ -88,20 +88,33 @@ public class SysLoginController extends BaseController
         try
         {
             subject.login(token);
-            // 记录登录成功日志
-            SysLogininfor logininfor = new SysLogininfor();
-            logininfor.setLoginName(username);
-            logininfor.setIpaddr(ServletUtils.getClientIP(request));
-            logininfor.setLoginLocation(getLoginLocation(ServletUtils.getClientIP(request)));
-            logininfor.setBrowser(ServletUtils.getBrowser(request));
-            logininfor.setOs(ServletUtils.getOs(request));
-            logininfor.setStatus("0"); // 0 表示成功
-            logininfor.setMsg("登录成功");
-            logininfor.setRole(role); // 记录登录身份
-            logininforService.insertLogininfor(logininfor);
+            
+            // 从Shiro获取登录后的用户信息（包含数据库中的role）
+            com.ruoyi.common.core.domain.entity.SysUser loggedInUser = (com.ruoyi.common.core.domain.entity.SysUser) subject.getPrincipal();
+            String userRole = loggedInUser != null && loggedInUser.getRole() != null ? loggedInUser.getRole() : (role != null ? role : "admin");
+            
+            // 记录登录成功日志（如果失败不影响登录）
+            try
+            {
+                SysLogininfor logininfor = new SysLogininfor();
+                logininfor.setLoginName(username);
+                logininfor.setIpaddr(ServletUtils.getClientIP(request));
+                logininfor.setLoginLocation(getLoginLocation(ServletUtils.getClientIP(request)));
+                logininfor.setBrowser(ServletUtils.getBrowser(request));
+                logininfor.setOs(ServletUtils.getOs(request));
+                logininfor.setStatus("0"); // 0 表示成功
+                logininfor.setMsg("登录成功");
+                logininfor.setRole(userRole); // 使用数据库中的角色
+                logininforService.insertLogininfor(logininfor);
+            }
+            catch (Exception e)
+            {
+                // 日志记录失败不影响登录流程
+                logger.warn("记录登录日志失败", e);
+            }
 
-            // 获取重定向路径
-            String redirect = ROLE_REDIRECT_MAP.getOrDefault(role, "/index");
+            // 根据用户实际角色获取重定向路径
+            String redirect = ROLE_REDIRECT_MAP.getOrDefault(userRole, "/index");
             return AjaxResult.success().put("redirect", redirect);
         }
         catch (AuthenticationException e)
@@ -112,17 +125,35 @@ public class SysLoginController extends BaseController
                 msg = e.getMessage();
             }
             // 记录登录失败日志
-            SysLogininfor logininfor = new SysLogininfor();
-            logininfor.setLoginName(username);
-            logininfor.setIpaddr(ServletUtils.getClientIP(request));
-            logininfor.setLoginLocation(getLoginLocation(ServletUtils.getClientIP(request)));
-            logininfor.setBrowser(ServletUtils.getBrowser(request));
-            logininfor.setOs(ServletUtils.getOs(request));
-            logininfor.setStatus("1"); // 1 表示失败
-            logininfor.setMsg(msg);
-            logininfor.setRole(role); // 记录登录身份
-            logininforService.insertLogininfor(logininfor);
+            try
+            {
+                SysLogininfor logininfor = new SysLogininfor();
+                logininfor.setLoginName(username);
+                logininfor.setIpaddr(ServletUtils.getClientIP(request));
+                logininfor.setLoginLocation(getLoginLocation(ServletUtils.getClientIP(request)));
+                logininfor.setBrowser(ServletUtils.getBrowser(request));
+                logininfor.setOs(ServletUtils.getOs(request));
+                logininfor.setStatus("1"); // 1 表示失败
+                logininfor.setMsg(msg);
+                logininfor.setRole(role != null ? role : "unknown"); // 记录登录身份
+                logininforService.insertLogininfor(logininfor);
+            }
+            catch (Exception ex)
+            {
+                logger.warn("记录登录失败日志异常", ex);
+            }
 
+            return AjaxResult.error(msg);
+        }
+        catch (Exception e)
+        {
+            // 捕获其他所有异常，避免请求失败
+            logger.error("登录过程中发生异常", e);
+            String msg = "登录失败，请稍后重试";
+            if (StringUtils.isNotEmpty(e.getMessage()))
+            {
+                msg = "登录失败：" + e.getMessage();
+            }
             return AjaxResult.error(msg);
         }
     }

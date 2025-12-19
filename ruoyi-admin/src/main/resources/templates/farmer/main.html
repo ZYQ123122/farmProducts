@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <th:block th:include="include :: header('农户首页')" />
+  <style>
+    .farmer-home-page {
+      padding: 20px 0;
+    }
+    .page-header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 30px 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .page-header h1 {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 0 0 10px 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .page-header .subtitle {
+      font-size: 18px;
+      opacity: 0.95;
+      margin: 0;
+    }
+    .image-carousel-container {
+      margin: 30px 0;
+      text-align: center;
+    }
+    .image-carousel {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 400px;
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      background: #f5f5f5;
+    }
+    .carousel-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+    .carousel-image.active {
+      opacity: 1;
+    }
+    .carousel-indicators {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    .carousel-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .carousel-indicator.active {
+      background: white;
+      width: 24px;
+      border-radius: 6px;
+    }
+    .platform-intro {
+      margin: 40px 0;
+      padding: 30px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .platform-intro h2 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 15px;
+    }
+    .platform-intro-content {
+      color: #555;
+      line-height: 1.8;
+      font-size: 16px;
+      text-align: justify;
+    }
+    .platform-intro-content p {
+      margin-bottom: 15px;
+    }
+    .platform-intro-content .highlight {
+      color: #667eea;
+      font-weight: 600;
+    }
+    @media (max-width: 768px) {
+      .page-header h1 {
+        font-size: 28px;
+      }
+      .page-header .subtitle {
+        font-size: 16px;
+      }
+      .image-carousel {
+        height: 250px;
+      }
+      .platform-intro {
+        padding: 20px;
+      }
+      .platform-intro h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="wrapper wrapper-content animated fadeInRight farmer-home-page">
+  <!-- 标题和副标题 -->
+  <div class="page-header">
+    <h1>农户工作台</h1>
+    <p class="subtitle">专业的农产品销售管理平台，助力农户高效经营</p>
+  </div>
+
+  <!-- 图片轮播框 -->
+  <div class="image-carousel-container">
+    <div class="image-carousel" id="imageCarousel">
+      <img th:src="@{/images/R.jpg}" alt="农产品展示1" class="carousel-image active" id="image1">
+      <img th:src="@{/images/wadtlwuy.png}" alt="农产品展示2" class="carousel-image" id="image2">
+      <div class="carousel-indicators">
+        <div class="carousel-indicator active" data-index="0"></div>
+        <div class="carousel-indicator" data-index="1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 平台简介 -->
+  <div class="platform-intro">
+    <h2>关于农销平台</h2>
+    <div class="platform-intro-content">
+      <p>
+        农销平台是一个专为农户和买家打造的<span class="highlight">现代化农产品交易平台</span>，致力于连接优质农产品生产者和需求方，构建高效、透明、可信的农产品流通体系。
+      </p>
+      <p>
+        <strong>平台核心功能：</strong>
+      </p>
+      <p>
+        • <span class="highlight">商品管理</span>：农户可以轻松上架、管理自己的农产品，实时更新库存和价格信息，让您的优质产品快速触达潜在买家。
+      </p>
+      <p>
+        • <span class="highlight">订单管理</span>：完善的订单处理系统，支持订单确认、发货跟踪、收货确认等全流程管理，让交易更加便捷高效。
+      </p>
+      <p>
+        • <span class="highlight">需求对接</span>：实时查看买家采购需求，主动对接商机，拓展销售渠道，提升农产品销售效率。
+      </p>
+      <p>
+        • <span class="highlight">专家咨询</span>：提供专业的农业技术咨询和知识库服务，帮助农户解决生产难题，提升农产品质量和产量。
+      </p>
+      <p>
+        • <span class="highlight">融资支持</span>：对接金融机构，为有资金需求的农户提供融资匹配和申请服务，助力农业产业发展。
+      </p>
+      <p>
+        我们致力于为农户提供<span class="highlight">一站式农产品销售解决方案</span>，通过数字化手段降低交易成本，提高交易效率，让优质农产品更好地走向市场，助力乡村振兴和农业现代化发展。
+      </p>
+    </div>
+  </div>
+</div>
+
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+  (function() {
+    var currentIndex = 0;
+    var images = document.querySelectorAll('.carousel-image');
+    var indicators = document.querySelectorAll('.carousel-indicator');
+    var totalImages = images.length;
+
+    function showImage(index) {
+      // 隐藏所有图片
+      images.forEach(function(img) {
+        img.classList.remove('active');
+      });
+      // 显示当前图片
+      images[index].classList.add('active');
+      
+      // 更新指示器
+      indicators.forEach(function(indicator, i) {
+        if (i === index) {
+          indicator.classList.add('active');
+        } else {
+          indicator.classList.remove('active');
+        }
+      });
+    }
+
+    function nextImage() {
+      currentIndex = (currentIndex + 1) % totalImages;
+      showImage(currentIndex);
+    }
+
+    // 每5秒切换一次图片
+    setInterval(nextImage, 5000);
+
+    // 点击指示器切换图片
+    indicators.forEach(function(indicator, index) {
+      indicator.addEventListener('click', function() {
+        currentIndex = index;
+        showImage(currentIndex);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

@@ -17,10 +17,8 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.common.utils.ShiroUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
-import com.ruoyi.common.utils.file.FileUtils;
 import com.ruoyi.common.utils.file.MimeTypeUtils;
 import com.ruoyi.framework.shiro.service.SysPasswordService;
 import com.ruoyi.system.service.ISysUserService;
@@ -52,8 +50,9 @@ public class SysProfileController extends BaseController
     {
         SysUser user = getSysUser();
         mmap.put("user", user);
-        mmap.put("roleGroup", userService.selectUserRoleGroup(user.getUserId()));
-        mmap.put("postGroup", userService.selectUserPostGroup(user.getUserId()));
+        // 新表结构：不再有角色组和岗位组
+        mmap.put("roleGroup", user.getRole() != null ? user.getRole() : "");
+        mmap.put("postGroup", "");
         return prefix + "/profile";
     }
 
@@ -87,8 +86,9 @@ public class SysProfileController extends BaseController
         {
             return error("新密码不能与旧密码相同");
         }
-        user.setSalt(ShiroUtils.randomSalt());
-        user.setPassword(passwordService.encryptPassword(user.getLoginName(), newPassword, user.getSalt()));
+        // 新表结构：不再使用salt，直接加密密码
+        String encryptedPassword = passwordService.encryptPassword(user.getUsername(), newPassword, "");
+        user.setPasswordHash(encryptedPassword);
         if (userService.resetUserPwd(user) > 0)
         {
             setSysUser(userService.selectUserById(user.getUserId()));
@@ -127,25 +127,100 @@ public class SysProfileController extends BaseController
     @ResponseBody
     public AjaxResult update(SysUser user)
     {
-        SysUser currentUser = getSysUser();
-        currentUser.setUserName(user.getUserName());
-        currentUser.setEmail(user.getEmail());
-        currentUser.setPhonenumber(user.getPhonenumber());
-        currentUser.setSex(user.getSex());
-        if (StringUtils.isNotEmpty(user.getPhonenumber()) && !userService.checkPhoneUnique(currentUser))
+        try
         {
-            return error("修改用户'" + currentUser.getLoginName() + "'失败，手机号码已存在");
+            SysUser currentUser = getSysUser();
+            if (currentUser == null)
+            {
+                return error("用户未登录，请重新登录");
+            }
+            
+            // 更新用户名（如果提供了新用户名且与当前用户名不同）
+            if (StringUtils.isNotEmpty(user.getUsername()) && !user.getUsername().equals(currentUser.getUsername()))
+            {
+                // 检查用户名是否唯一（排除当前用户）
+                SysUser checkUser = new SysUser();
+                checkUser.setId(currentUser.getId());
+                checkUser.setUsername(user.getUsername());
+                if (!userService.checkLoginNameUnique(checkUser))
+                {
+                    return error("修改失败，用户名已存在");
+                }
+                currentUser.setUsername(user.getUsername());
+            }
+            
+            // 更新姓名（允许为空）
+            currentUser.setName(StringUtils.isNotEmpty(user.getName()) ? user.getName() : null);
+            
+            // 更新邮箱（允许为空，但如果提供了且与当前邮箱不同，需要检查唯一性）
+            if (StringUtils.isNotEmpty(user.getEmail()))
+            {
+                // 如果邮箱没有改变，不需要检查唯一性
+                String currentEmail = currentUser.getEmail();
+                if (currentEmail == null || !user.getEmail().equals(currentEmail))
+                {
+                    currentUser.setEmail(user.getEmail());
+                    if (!userService.checkEmailUnique(currentUser))
+                    {
+                        return error("修改失败，邮箱已存在");
+                    }
+                }
+            }
+            else
+            {
+                currentUser.setEmail(null);
+            }
+            
+            // 更新手机号（允许为空，但如果提供了且与当前手机号不同，需要检查唯一性）
+            if (StringUtils.isNotEmpty(user.getPhone()))
+            {
+                // 如果手机号没有改变，不需要检查唯一性
+                String currentPhone = currentUser.getPhone();
+                if (currentPhone == null || !user.getPhone().equals(currentPhone))
+                {
+                    currentUser.setPhone(user.getPhone());
+                    if (!userService.checkPhoneUnique(currentUser))
+                    {
+                        return error("修改失败，手机号码已存在");
+                    }
+                }
+            }
+            else
+            {
+                currentUser.setPhone(null);
+            }
+            
+            // 更新用户信息到数据库
+            int result = userService.updateUserInfo(currentUser);
+            if (result > 0)
+            {
+                // 重新获取更新后的用户信息并更新session
+                SysUser updatedUser = userService.selectUserById(currentUser.getUserId());
+                if (updatedUser != null)
+                {
+                    setSysUser(updatedUser);
+                    return success();
+                }
+                else
+                {
+                    return error("修改成功，但获取更新后的用户信息失败");
+                }
+            }
+            else if (result == 0)
+            {
+                // 没有数据被更新，可能是数据没有变化
+                return success("数据未发生变化");
+            }
+            else
+            {
+                return error("修改失败，数据库更新异常");
+            }
         }
-        else if (StringUtils.isNotEmpty(user.getEmail()) && !userService.checkEmailUnique(currentUser))
+        catch (Exception e)
         {
-            return error("修改用户'" + currentUser.getLoginName() + "'失败，邮箱账号已存在");
+            log.error("修改个人信息失败", e);
+            return error("修改失败：" + (e.getMessage() != null ? e.getMessage() : "服务器错误，请联系管理员"));
         }
-        if (userService.updateUserInfo(currentUser) > 0)
-        {
-            setSysUser(userService.selectUserById(currentUser.getUserId()));
-            return success();
-        }
-        return error();
     }
 
     /**
@@ -164,12 +239,13 @@ public class SysProfileController extends BaseController
                 String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION, true);
                 if (userService.updateUserAvatar(currentUser.getUserId(), avatar))
                 {
-                    String oldAvatar = currentUser.getAvatar();
-                    if (StringUtils.isNotEmpty(oldAvatar))
-                    {
-                        FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
-                    }
-                    currentUser.setAvatar(avatar);
+                // 新表结构：不再有avatar字段，但保留上传功能用于其他用途
+                // String oldAvatar = currentUser.getAvatar();
+                // if (StringUtils.isNotEmpty(oldAvatar))
+                // {
+                //     FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
+                // }
+                // currentUser.setAvatar(avatar);
                     setSysUser(currentUser);
                     return success();
                 }
@@ -180,6 +256,81 @@ public class SysProfileController extends BaseController
         {
             log.error("修改头像失败！", e);
             return error(e.getMessage());
+        }
+    }
+
+    /**
+     * 校验用户名是否唯一（用于前端验证）
+     */
+    @PostMapping("/checkLoginNameUnique")
+    @ResponseBody
+    public boolean checkLoginNameUnique(@RequestParam(required = false) Long userId, @RequestParam(required = false) String loginName)
+    {
+        try
+        {
+            if (StringUtils.isEmpty(loginName))
+            {
+                return true; // 空值认为是唯一的
+            }
+            SysUser checkUser = new SysUser();
+            checkUser.setId(userId != null ? userId : -1L);
+            checkUser.setUsername(loginName);
+            return userService.checkLoginNameUnique(checkUser);
+        }
+        catch (Exception e)
+        {
+            log.error("检查用户名唯一性失败", e);
+            return false;
+        }
+    }
+
+    /**
+     * 校验邮箱是否唯一（用于前端验证）
+     */
+    @PostMapping("/checkEmailUnique")
+    @ResponseBody
+    public boolean checkEmailUnique(@RequestParam(required = false) Long userId, @RequestParam(required = false) String email)
+    {
+        try
+        {
+            if (StringUtils.isEmpty(email))
+            {
+                return true; // 空值认为是唯一的
+            }
+            SysUser checkUser = new SysUser();
+            checkUser.setId(userId != null ? userId : -1L);
+            checkUser.setEmail(email);
+            return userService.checkEmailUnique(checkUser);
+        }
+        catch (Exception e)
+        {
+            log.error("检查邮箱唯一性失败", e);
+            return false;
+        }
+    }
+
+    /**
+     * 校验手机号是否唯一（用于前端验证）
+     */
+    @PostMapping("/checkPhoneUnique")
+    @ResponseBody
+    public boolean checkPhoneUnique(@RequestParam(required = false) Long userId, @RequestParam(required = false) String phonenumber)
+    {
+        try
+        {
+            if (StringUtils.isEmpty(phonenumber))
+            {
+                return true; // 空值认为是唯一的
+            }
+            SysUser checkUser = new SysUser();
+            checkUser.setId(userId != null ? userId : -1L);
+            checkUser.setPhone(phonenumber);
+            return userService.checkPhoneUnique(checkUser);
+        }
+        catch (Exception e)
+        {
+            log.error("检查手机号唯一性失败", e);
+            return false;
         }
     }
 }

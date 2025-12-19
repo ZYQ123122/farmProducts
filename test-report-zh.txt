@@ -1,0 +1,65 @@
+若依项目单元测试中文报告（基于 surefire XML 结果）
+===============================================
+
+说明：以下统计直接来自 `target/surefire-reports/TEST-*.xml` 文件。  
+若需查看原始 XML，可前往各模块的 `target/surefire-reports/` 目录。
+
+一、`ruoyi-system` 模块
+----------------------
+1. `BuyerRequirementServiceImplTest`
+   - 用例数：9
+   - 耗时：1.131 秒
+   - 结果：全部通过
+2. `FarmerProductServiceImplTest`
+   - 用例数：17
+   - 耗时：0.076 秒
+   - 结果：全部通过
+3. `TradeOrderServiceImplTest`
+   - 用例数：4
+   - 耗时：0.050 秒
+   - 结果：全部通过
+
+二、`ruoyi-admin` 模块
+---------------------
+1. `BuyerRequirementApiControllerTest`
+   - 用例数：6
+   - 耗时：1.515 秒
+   - 结果：全部通过
+2. `BuyerTradeApiControllerTest`
+   - 用例数：6
+   - 耗时：0.108 秒
+   - 结果：全部通过
+3. `FarmerBuyerRequirementApiControllerTest`
+   - 用例数：1
+   - 耗时：0.028 秒
+   - 结果：全部通过
+4. `FarmerOrderApiControllerTest`
+   - 用例数：2
+   - 耗时：0.022 秒
+   - 结果：全部通过
+5. `FarmerProductApiControllerTest`
+   - 用例数：11
+   - 耗时：0.059 秒
+   - 结果：全部通过
+6. `BuyerControllerTest`
+   - 用例数：7
+   - 耗时：0.125 秒
+   - 结果：全部通过
+7. `FarmerControllerTest`
+   - 用例数：13
+   - 耗时：0.050 秒
+   - 结果：全部通过
+
+三、查看原始报告的方式
+----------------------
+- XML：`<模块目录>/target/surefire-reports/TEST-*.xml`
+- HTML（可选）：在模块目录执行 `mvn surefire-report:report` 后查看 `target/site/surefire-report.html`
+
+如需重新生成报告，先确保各模块依赖可解析，再运行：
+```
+mvn test
+```
+
+
+
+

@@ -6,10 +6,8 @@ import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.ShiroConstants;
 import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.domain.entity.SysUser;
-import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.MessageUtils;
 import com.ruoyi.common.utils.ServletUtils;
-import com.ruoyi.common.utils.ShiroUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.framework.manager.factory.AsyncFactory;
@@ -34,13 +32,16 @@ public class SysRegisterService
      */
     public String register(SysUser user)
     {
-        String msg = "", loginName = user.getLoginName(), password = user.getPassword();
+        String msg = "";
+        // 新表结构：使用username字段
+        String username = StringUtils.isNotEmpty(user.getUsername()) ? user.getUsername() : user.getLoginName();
+        String password = user.getPassword();
 
         if (ShiroConstants.CAPTCHA_ERROR.equals(ServletUtils.getRequest().getAttribute(ShiroConstants.CURRENT_CAPTCHA)))
         {
             msg = "验证码错误";
         }
-        else if (StringUtils.isEmpty(loginName))
+        else if (StringUtils.isEmpty(username))
         {
             msg = "用户名不能为空";
         }
@@ -53,29 +54,34 @@ public class SysRegisterService
         {
             msg = "密码长度必须在5到20个字符之间";
         }
-        else if (loginName.length() < UserConstants.USERNAME_MIN_LENGTH
-                || loginName.length() > UserConstants.USERNAME_MAX_LENGTH)
+        else if (username.length() < UserConstants.USERNAME_MIN_LENGTH
+                || username.length() > UserConstants.USERNAME_MAX_LENGTH)
         {
             msg = "账户长度必须在2到20个字符之间";
         }
-        else if (!userService.checkLoginNameUnique(user))
-        {
-            msg = "保存用户'" + loginName + "'失败，注册账号已存在";
-        }
         else
         {
-            user.setPwdUpdateDate(DateUtils.getNowDate());
-            user.setUserName(loginName);
-            user.setSalt(ShiroUtils.randomSalt());
-            user.setPassword(passwordService.encryptPassword(loginName, password, user.getSalt()));
-            boolean regFlag = userService.registerUser(user);
-            if (!regFlag)
+            // 设置username（新表结构）
+            user.setUsername(username);
+            if (!userService.checkLoginNameUnique(user))
             {
-                msg = "注册失败,请联系系统管理人员";
+                msg = "保存用户'" + username + "'失败，注册账号已存在";
             }
             else
             {
-                AsyncManager.me().execute(AsyncFactory.recordLogininfor(loginName, Constants.REGISTER, MessageUtils.message("user.register.success")));
+                // 新表结构：使用passwordHash字段，不需要salt
+                user.setPasswordHash(passwordService.encryptPassword(username, password, ""));
+                // 设置默认值
+                user.setIsVerified(0); // 默认未验证
+                boolean regFlag = userService.registerUser(user);
+                if (!regFlag)
+                {
+                    msg = "注册失败,请联系系统管理人员";
+                }
+                else
+                {
+                    AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.REGISTER, MessageUtils.message("user.register.success")));
+                }
             }
         }
         return msg;

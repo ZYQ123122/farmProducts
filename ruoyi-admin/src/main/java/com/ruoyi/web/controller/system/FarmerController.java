@@ -1,15 +1,194 @@
 package com.ruoyi.web.controller.system;
 
+import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-
+import com.ruoyi.common.config.RuoYiConfig;
+import com.ruoyi.common.constant.ShiroConstants;
+import com.ruoyi.common.core.controller.BaseController;
+import com.ruoyi.common.core.domain.entity.SysUser;
+import com.ruoyi.common.core.text.Convert;
+import com.ruoyi.common.utils.ServletUtils;
+import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.system.service.ISysConfigService;
 @Controller
 @RequestMapping("/farmer")
-public class FarmerController {
+public class FarmerController extends BaseController {
+
+    @Autowired
+    private ISysConfigService configService;
 
     @GetMapping("/index")
-    public String index() {
-        return "farmer/index";
+    public String index(ModelMap mmap, HttpServletRequest request) {
+        try
+        {
+            SysUser user = getSysUser();
+            if (user == null)
+            {
+                return "redirect:/login";
+            }
+            mmap.put("user", user);
+            
+            // 安全地获取配置值
+            try
+            {
+                mmap.put("sideTheme", getConfigValue("sys.index.sideTheme", "dark"));
+                mmap.put("skinName", getConfigValue("sys.index.skinName", "blue"));
+                Boolean footer = Convert.toBool(getConfigValue("sys.index.footer", "true"), true);
+                Boolean tagsView = Convert.toBool(getConfigValue("sys.index.tagsView", "true"), true);
+                mmap.put("footer", footer);
+                mmap.put("tagsView", tagsView);
+                mmap.put("mainClass", contentMainClass(footer, tagsView));
+            }
+            catch (Exception e)
+            {
+                // 配置服务失败时使用默认值
+                mmap.put("sideTheme", "dark");
+                mmap.put("skinName", "blue");
+                mmap.put("footer", true);
+                mmap.put("tagsView", true);
+                mmap.put("mainClass", "");
+            }
+            
+            mmap.put("copyrightYear", RuoYiConfig.getCopyrightYear());
+            mmap.put("demoEnabled", RuoYiConfig.isDemoEnabled());
+            // 新表结构：不再有pwdUpdateDate字段
+            mmap.put("isDefaultModifyPwd", false);
+            mmap.put("isPasswordExpired", false);
+            boolean isMobile = ServletUtils.checkAgentIsMobile(ServletUtils.getRequest().getHeader("User-Agent"));
+            mmap.put("isMobile", isMobile);
+            request.getSession().setAttribute(ShiroConstants.CSRF_TOKEN, ServletUtils.generateToken());
+            return "farmer/index";
+        }
+        catch (Exception e)
+        {
+            logger.error("访问农户首页时发生异常", e);
+            return "redirect:/login";
+        }
     }
+    
+    /**
+     * 安全地获取配置值，如果失败则返回默认值
+     */
+    private String getConfigValue(String key, String defaultValue)
+    {
+        try
+        {
+            String value = configService.selectConfigByKey(key);
+            return StringUtils.isNotEmpty(value) ? value : defaultValue;
+        }
+        catch (Exception e)
+        {
+            logger.warn("获取配置 {} 失败，使用默认值: {}", key, defaultValue, e);
+            return defaultValue;
+        }
+    }
+    @GetMapping("/main")
+    public String main(ModelMap mmap) {
+        mmap.put("version", RuoYiConfig.getVersion());
+        return "farmer/main";
+    }
+
+    @GetMapping("/product/info")
+    public String productInfo() {
+        return "farmer/product/info";
+    }
+
+    @GetMapping("/product/manage")
+    public String productManage() {
+        return "farmer/product/manage";
+    }
+
+    @GetMapping("/product/demand")
+    public String productDemand() {
+        return "farmer/product/demand";
+    }
+
+    @GetMapping("/product/contact")
+    public String productContact(ModelMap mmap) {
+        SysUser user = getSysUser();
+        if (user == null)
+        {
+            return "redirect:/login";
+        }
+        mmap.put("user", user);
+        return "message/contact";
+    }
+
+
+    @GetMapping("/order/manage")
+    public String orderManage() {
+        return "farmer/order/manage";
+    }
+
+    @GetMapping("/afterSale/manage")
+    public String afterSaleManage(ModelMap mmap) {
+        SysUser user = getSysUser();
+        if (user == null)
+        {
+            return "redirect:/login";
+        }
+        mmap.put("user", user);
+        return "farmer/afterSale/manage";
+    }
+
+    @GetMapping("/expert/appointment")
+    public String expertAppointment() {
+        return "farmer/expert/appointment";
+    }
+
+    @GetMapping("/expert/inquiry")
+    public String expertInquiry() {
+        return "farmer/expert/inquiry";
+    }
+
+    @GetMapping("/expert/detail")
+    public String expertDetail() {
+        return "farmer/expert/detail";
+    }
+
+    @GetMapping("/expert/knowledge")
+    public String expertKnowledge() {
+        return "farmer/expert/knowledge";
+    }
+
+    @GetMapping("/finance/match")
+    public String financeMatch() {
+        return "farmer/finance/match";
+    }
+
+    @GetMapping("/finance/apply")
+    public String financeApply() {
+        return "farmer/finance/apply";
+    }
+
+    @GetMapping("/finance/record")
+    public String financeRecord() {
+        return "farmer/finance/record";
+    }
+
+    @GetMapping("/community/index")
+    public String communityIndex() {
+        return "farmer/community/index";
+    }
+
+    @GetMapping("/notification/list")
+    public String notificationList() {
+        return "farmer/notification/list";
+    }
+
+    private String contentMainClass(Boolean footer, Boolean tagsView) {
+        if (!footer && !tagsView) {
+            return "tagsview-footer-hide";
+        } else if (!footer) {
+            return "footer-hide";
+        } else if (!tagsView) {
+            return "tagsview-hide";
+        }
+        return StringUtils.EMPTY;
+    }
+
 }

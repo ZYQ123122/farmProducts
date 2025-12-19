@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FinanceApplicationMapper">
+
+    <resultMap id="FinanceApplicationResult" type="com.ruoyi.system.domain.FinanceApplication">
+        <id     property="id"             column="id"/>
+        <result property="farmerId"       column="farmer_id"/>
+        <result property="productId"      column="product_id"/>
+        <result property="bankId"         column="bank_id"/>
+        <result property="amount"         column="amount"/>
+        <result property="termMonths"     column="term_months"/>
+        <result property="purpose"        column="purpose"/>
+        <result property="collateralDesc" column="collateral_desc"/>
+        <result property="status"         column="status"/>
+        <result property="reviewerId"    column="reviewer_id"/>
+        <result property="bankComment"    column="bank_comment"/>
+        <result property="createdAt"      column="created_at"/>
+        <result property="updatedAt"      column="updated_at"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, farmer_id, product_id, bank_id, amount, term_months, purpose, collateral_desc, status, reviewer_id, bank_comment, created_at, updated_at
+    </sql>
+
+    <select id="selectFinanceApplicationById" parameterType="Long" resultMap="FinanceApplicationResult">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM finance_application
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectFinanceApplicationList" parameterType="com.ruoyi.system.domain.FinanceApplication" resultMap="FinanceApplicationResult">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM finance_application
+        <where>
+            <if test="farmerId != null">AND farmer_id = #{farmerId}</if>
+            <if test="bankId != null">AND bank_id = #{bankId}</if>
+            <if test="productId != null">AND product_id = #{productId}</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertFinanceApplication" parameterType="com.ruoyi.system.domain.FinanceApplication" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO finance_application (farmer_id, product_id, bank_id, amount, term_months, purpose, collateral_desc, status, created_at, updated_at)
+        VALUES (#{farmerId}, #{productId}, #{bankId}, #{amount}, #{termMonths}, #{purpose}, #{collateralDesc}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="updateFinanceApplication" parameterType="com.ruoyi.system.domain.FinanceApplication">
+        UPDATE finance_application
+        <set>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="termMonths != null">term_months = #{termMonths},</if>
+            <if test="purpose != null">purpose = #{purpose},</if>
+            <if test="collateralDesc != null">collateral_desc = #{collateralDesc},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="reviewerId != null">reviewer_id = #{reviewerId},</if>
+            <if test="bankComment != null">bank_comment = #{bankComment},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>
+
+

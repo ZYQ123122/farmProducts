@@ -86,3 +86,7 @@
 用户名：admin
 密码：admin123
 数据库连接：将application-druid.yml里的密码改一下
+农户ID:100用户名：1234
+    密码：123456
+买家ID:101用户名：buyer1
+    密码：buyer1234

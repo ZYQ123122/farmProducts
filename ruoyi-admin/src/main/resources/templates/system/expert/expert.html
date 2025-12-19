@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+  <th:block th:include="include :: header('专家信息管理')" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+  <div class="row">
+    <div class="col-sm-12 search-collapse">
+      <form id="expert-form">
+        <div class="select-list">
+          <ul>
+            <li>
+              专业领域：<input type="text" name="specialty"/>
+            </li>
+            <li>
+              审核状态：<select name="auditStatus">
+              <option value="">所有</option>
+              <option value="0">待审核</option>
+              <option value="1">已通过</option>
+              <option value="2">已拒绝</option>
+            </select>
+            </li>
+            <li>
+              状态：<select name="status">
+              <option value="">所有</option>
+              <option value="0">正常</option>
+              <option value="1">停用</option>
+            </select>
+            </li>
+            <li>
+              <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+              <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+            </li>
+          </ul>
+        </div>
+      </form>
+    </div>
+
+    <div class="btn-group-sm" id="toolbar" role="group">
+      <a class="btn btn-info" onclick="viewAuditList()">
+        <i class="fa fa-check-circle"></i> 待审核列表
+      </a>
+      <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()" shiro:hasPermission="system:expert:remove">
+        <i class="fa fa-remove"></i> 删除
+      </a>
+    </div>
+
+    <div class="col-sm-12 select-table table-striped">
+      <table id="bootstrap-table"></table>
+    </div>
+  </div>
+</div>
+<th:block th:include="include :: footer" />
+<script th:inline="javascript">
+  var editFlag = true; // [[${@permission.hasPermi('system:expert:edit')}]];
+  var removeFlag = true; // [[${@permission.hasPermi('system:expert:remove')}]];
+  var auditFlag = true; // [[${@permission.hasPermi('system:expert:audit')}]];
+  var prefix = ctx + "system/expert";
+
+  $(function() {
+    var options = {
+      url: prefix + "/list",
+      removeUrl: prefix + "/remove",
+      modalName: "专家信息",
+      columns: [{
+        checkbox: true
+      },
+        {
+          field : 'id',
+          title : '序号',
+          width: 80
+        },
+        {
+          field: 'userId',
+          title: '用户ID',
+          width: 100
+        },
+        {
+          field: 'specialty',
+          title: '专业领域',
+          width: 150
+        },
+        {
+          field: 'experience',
+          title: '工作经验',
+          width: 200,
+          formatter: function(value, row, index) {
+            if (value && value.length > 30) {
+              return value.substring(0, 30) + '...';
+            }
+            return value || '';
+          }
+        },
+        {
+          field: 'description',
+          title: '专家简介',
+          formatter: function(value, row, index) {
+            if (value && value.length > 50) {
+              return value.substring(0, 50) + '...';
+            }
+            return value || '';
+          }
+        },
+        {
+          field: 'auditStatus',
+          title: '审核状态',
+          align: 'center',
+          width: 100,
+          formatter: function(value, row, index) {
+            if (value == '0') {
+              return '<span class="label label-warning">待审核</span>';
+            } else if (value == '1') {
+              return '<span class="label label-success">已通过</span>';
+            } else if (value == '2') {
+              return '<span class="label label-danger">已拒绝</span>';
+            }
+            return value || '';
+          }
+        },
+        {
+          field: 'status',
+          title: '状态',
+          align: 'center',
+          width: 100,
+          formatter: function(value, row, index) {
+            if (value == '0') {
+              return '<span class="label label-success">正常</span>';
+            } else if (value == '1') {
+              return '<span class="label label-danger">停用</span>';
+            }
+            return value || '';
+          }
+        },
+        {
+          field: 'createTime',
+          title: '创建时间',
+          width: 160,
+          sortable: true
+        },
+        {
+          title: '操作',
+          align: 'center',
+          width: 250,
+          formatter: function(value, row, index) {
+            var actions = [];
+            if (row.auditStatus == '0') {
+              actions.push('<a class="btn btn-success btn-xs" href="javascript:void(0)" onclick="auditExpert(\'' + row.id + '\')"><i class="fa fa-check"></i>审核</a> ');
+            }
+            actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.id + '\')"><i class="fa fa-remove"></i>删除</a>');
+            return actions.join('');
+          }
+        }]
+    };
+    $.table.init(options);
+  });
+
+  // 查看待审核列表
+  function viewAuditList() {
+    // 设置搜索条件为待审核
+    $("#expert-form select[name='auditStatus']").val("0");
+    // 执行搜索
+    $.table.search();
+  }
+
+  // 审核专家
+  function auditExpert(id) {
+    $.modal.open("审核专家申请", ctx + "system/expert/audit/" + id, {
+      width: "800px",
+      height: "600px"
+    });
+  }
+</script>
+</body>
+</html>

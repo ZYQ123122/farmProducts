@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BankInfoMapper">
+
+    <resultMap id="BankInfoResult" type="com.ruoyi.system.domain.BankInfo">
+        <id     property="id"            column="id"/>
+        <result property="bankCode"      column="bank_code"/>
+        <result property="bankName"      column="bank_name"/>
+        <result property="userId"        column="user_id"/>
+        <result property="contactPerson" column="contact_person"/>
+        <result property="contactPhone"  column="contact_phone"/>
+        <result property="contactEmail"  column="contact_email"/>
+        <result property="address"       column="address"/>
+        <result property="status"       column="status"/>
+        <result property="remark"       column="remark"/>
+        <result property="createBy"      column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"      column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, bank_code, bank_name, user_id, contact_person, contact_phone, contact_email, address, status, remark, create_by, create_time, update_by, update_time
+    </sql>
+
+    <select id="selectBankInfoById" parameterType="Long" resultMap="BankInfoResult">
+        SELECT <include refid="Base_Column_List"/>
+        FROM bank_info
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectBankInfoByUserId" parameterType="Long" resultMap="BankInfoResult">
+        SELECT <include refid="Base_Column_List"/>
+        FROM bank_info
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectBankInfoByCode" parameterType="String" resultMap="BankInfoResult">
+        SELECT <include refid="Base_Column_List"/>
+        FROM bank_info
+        WHERE bank_code = #{bankCode}
+    </select>
+
+    <select id="selectBankInfoList" parameterType="com.ruoyi.system.domain.BankInfo" resultMap="BankInfoResult">
+        SELECT <include refid="Base_Column_List"/>
+        FROM bank_info
+        <where>
+            <if test="bankCode != null and bankCode != ''">AND bank_code = #{bankCode}</if>
+            <if test="bankName != null and bankName != ''">AND bank_name LIKE CONCAT('%', #{bankName}, '%')</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insertBankInfo" parameterType="com.ruoyi.system.domain.BankInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bank_info (bank_code, bank_name, user_id, contact_person, contact_phone, contact_email, address, status, remark, create_by, create_time)
+        VALUES (#{bankCode}, #{bankName}, #{userId}, #{contactPerson}, #{contactPhone}, #{contactEmail}, #{address}, #{status}, #{remark}, #{createBy}, NOW())
+    </insert>
+
+    <update id="updateBankInfo" parameterType="com.ruoyi.system.domain.BankInfo">
+        UPDATE bank_info
+        <set>
+            <if test="bankCode != null and bankCode != ''">bank_code = #{bankCode},</if>
+            <if test="bankName != null and bankName != ''">bank_name = #{bankName},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="contactPerson != null">contact_person = #{contactPerson},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="contactEmail != null">contact_email = #{contactEmail},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteBankInfoById" parameterType="Long">
+        DELETE FROM bank_info WHERE id = #{id}
+    </delete>
+
+</mapper>
+

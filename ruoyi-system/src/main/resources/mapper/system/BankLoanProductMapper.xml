@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BankLoanProductMapper">
+
+    <resultMap id="BankLoanProductResult" type="com.ruoyi.system.domain.BankLoanProduct">
+        <id     property="id"            column="id"/>
+        <result property="bankId"        column="bank_id"/>
+        <result property="productName"   column="product_name"/>
+        <result property="productCode"    column="product_code"/>
+        <result property="minAmount"      column="min_amount"/>
+        <result property="maxAmount"     column="max_amount"/>
+        <result property="minTermMonths" column="min_term_months"/>
+        <result property="maxTermMonths" column="max_term_months"/>
+        <result property="interestRate"  column="interest_rate"/>
+        <result property="description"   column="description"/>
+        <result property="requirements" column="requirements"/>
+        <result property="status"       column="status"/>
+        <result property="sortOrder"    column="sort_order"/>
+        <result property="remark"       column="remark"/>
+        <result property="createBy"     column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"     column="update_by"/>
+        <result property="updateTime"   column="update_time"/>
+        <result property="bankName"     column="bank_name"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        p.id, p.bank_id, p.product_name, p.product_code, p.min_amount, p.max_amount,
+        p.min_term_months, p.max_term_months, p.interest_rate, p.description, p.requirements,
+        p.status, p.sort_order, p.remark, p.create_by, p.create_time, p.update_by, p.update_time
+    </sql>
+
+    <select id="selectBankLoanProductById" parameterType="Long" resultMap="BankLoanProductResult">
+        SELECT <include refid="Base_Column_List"/>, b.bank_name
+        FROM bank_loan_product p
+        LEFT JOIN bank_info b ON p.bank_id = b.id
+        WHERE p.id = #{id}
+    </select>
+
+    <select id="selectBankLoanProductList" parameterType="com.ruoyi.system.domain.BankLoanProduct" resultMap="BankLoanProductResult">
+        SELECT <include refid="Base_Column_List"/>, b.bank_name
+        FROM bank_loan_product p
+        LEFT JOIN bank_info b ON p.bank_id = b.id
+        <where>
+            <if test="bankId != null">AND p.bank_id = #{bankId}</if>
+            <if test="productName != null and productName != ''">AND p.product_name LIKE CONCAT('%', #{productName}, '%')</if>
+            <if test="productCode != null and productCode != ''">AND p.product_code = #{productCode}</if>
+            <if test="status != null and status != ''">AND p.status = #{status}</if>
+        </where>
+        ORDER BY p.sort_order ASC, p.create_time DESC
+    </select>
+
+    <select id="selectAvailableProductList" resultMap="BankLoanProductResult">
+        SELECT <include refid="Base_Column_List"/>, b.bank_name
+        FROM bank_loan_product p
+        LEFT JOIN bank_info b ON p.bank_id = b.id
+        WHERE p.status = '1' AND b.status = '0'
+        ORDER BY p.sort_order ASC, p.create_time DESC
+    </select>
+
+    <select id="selectProductListByBankId" parameterType="Long" resultMap="BankLoanProductResult">
+        SELECT <include refid="Base_Column_List"/>, b.bank_name
+        FROM bank_loan_product p
+        LEFT JOIN bank_info b ON p.bank_id = b.id
+        WHERE p.bank_id = #{bankId}
+        ORDER BY p.sort_order ASC, p.create_time DESC
+    </select>
+
+    <insert id="insertBankLoanProduct" parameterType="com.ruoyi.system.domain.BankLoanProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bank_loan_product (bank_id, product_name, product_code, min_amount, max_amount,
+                                      min_term_months, max_term_months, interest_rate, description, requirements,
+                                      status, sort_order, remark, create_by, create_time)
+        VALUES (#{bankId}, #{productName}, #{productCode}, #{minAmount}, #{maxAmount},
+                #{minTermMonths}, #{maxTermMonths}, #{interestRate}, #{description}, #{requirements},
+                #{status}, #{sortOrder}, #{remark}, #{createBy}, NOW())
+    </insert>
+
+    <update id="updateBankLoanProduct" parameterType="com.ruoyi.system.domain.BankLoanProduct">
+        UPDATE bank_loan_product
+        <set>
+            <if test="bankId != null">bank_id = #{bankId},</if>
+            <if test="productName != null and productName != ''">product_name = #{productName},</if>
+            <if test="productCode != null">product_code = #{productCode},</if>
+            <if test="minAmount != null">min_amount = #{minAmount},</if>
+            <if test="maxAmount != null">max_amount = #{maxAmount},</if>
+            <if test="minTermMonths != null">min_term_months = #{minTermMonths},</if>
+            <if test="maxTermMonths != null">max_term_months = #{maxTermMonths},</if>
+            <if test="interestRate != null">interest_rate = #{interestRate},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="requirements != null">requirements = #{requirements},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteBankLoanProductById" parameterType="Long">
+        DELETE FROM bank_loan_product WHERE id = #{id}
+    </delete>
+
+</mapper>
+

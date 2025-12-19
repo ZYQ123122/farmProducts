@@ -1,7 +1,5 @@
 package com.ruoyi.framework.shiro.realm;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -29,8 +27,6 @@ import com.ruoyi.common.exception.user.UserPasswordNotMatchException;
 import com.ruoyi.common.exception.user.UserPasswordRetryLimitExceedException;
 import com.ruoyi.common.utils.ShiroUtils;
 import com.ruoyi.framework.shiro.service.SysLoginService;
-import com.ruoyi.system.service.ISysMenuService;
-import com.ruoyi.system.service.ISysRoleService;
 
 /**
  * 自定义Realm 处理登录 权限
@@ -42,12 +38,6 @@ public class UserRealm extends AuthorizingRealm
     private static final Logger log = LoggerFactory.getLogger(UserRealm.class);
 
     @Autowired
-    private ISysMenuService menuService;
-
-    @Autowired
-    private ISysRoleService roleService;
-
-    @Autowired
     private SysLoginService loginService;
 
     /**
@@ -57,25 +47,38 @@ public class UserRealm extends AuthorizingRealm
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection arg0)
     {
         SysUser user = ShiroUtils.getSysUser();
-        // 角色列表
-        Set<String> roles = new HashSet<String>();
-        // 功能列表
-        Set<String> menus = new HashSet<String>();
         SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
-        // 管理员拥有所有权限
-        if (user.isAdmin())
+        // 新表结构：直接使用用户的role字段
+        if (user != null && user.getRole() != null)
         {
-            info.addRole("admin");
-            info.addStringPermission("*:*:*");
-        }
-        else
-        {
-            roles = roleService.selectRoleKeys(user.getUserId());
-            menus = menuService.selectPermsByUserId(user.getUserId());
-            // 角色加入AuthorizationInfo认证对象
-            info.setRoles(roles);
-            // 权限加入AuthorizationInfo认证对象
-            info.setStringPermissions(menus);
+            // 添加角色
+            info.addRole(user.getRole());
+            // 管理员拥有所有权限
+            if ("admin".equals(user.getRole()) || user.isAdmin())
+            {
+                info.addStringPermission("*:*:*");
+            }
+            else
+            {
+                // 其他角色根据role设置基本权限
+                String role = user.getRole();
+                if ("farmer".equals(role))
+                {
+                    info.addStringPermission("farmer:*:*");
+                }
+                else if ("buyer".equals(role))
+                {
+                    info.addStringPermission("buyer:*:*");
+                }
+                else if ("expert".equals(role))
+                {
+                    info.addStringPermission("expert:*:*");
+                }
+                else if ("bank".equals(role))
+                {
+                    info.addStringPermission("bank:*:*");
+                }
+            }
         }
         return info;
     }
