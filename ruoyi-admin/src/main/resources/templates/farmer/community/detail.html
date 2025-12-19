@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>主题详情</title>
+  <th:block th:include="include :: header('主题详情')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    .forum-detail-container {
+      padding: 20px;
+    }
+    .topic-detail {
+      background: #fff;
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .topic-header {
+      border-bottom: 1px solid #e7eaec;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+    .topic-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .topic-meta {
+      color: #999;
+      font-size: 13px;
+    }
+    .topic-content {
+      line-height: 1.8;
+      color: #555;
+      margin: 20px 0;
+      min-height: 100px;
+    }
+    .comment-section {
+      background: #fff;
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      padding: 20px;
+    }
+    .comment-item {
+      border-bottom: 1px solid #f1f1f1;
+      padding: 15px 0;
+    }
+    .comment-item:last-child {
+      border-bottom: none;
+    }
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .comment-author {
+      font-weight: bold;
+      color: #333;
+    }
+    .comment-time {
+      color: #999;
+      font-size: 12px;
+    }
+    .comment-content {
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .comment-actions {
+      display: flex;
+      gap: 15px;
+    }
+    .comment-actions a {
+      color: #999;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .comment-actions a:hover {
+      color: #1ab394;
+    }
+    .comment-actions a.liked {
+      color: #f8ac59;
+    }
+    .reply-form {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e7eaec;
+    }
+    .btn-back {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body class="gray-bg">
+<div class="wrapper wrapper-content animated fadeInRight">
+  <div class="ibox">
+    <div class="ibox-content forum-detail-container">
+      <button type="button" class="btn btn-default btn-back" onclick="location.href='/farmer/forum/index'">
+        <i class="fa fa-arrow-left"></i> 返回列表
+      </button>
+
+      <!-- 主题详情 -->
+      <div class="topic-detail" th:object="${topic}">
+        <div class="topic-header">
+          <div class="topic-title">
+            <span th:if="*{isPinned}" class="label label-warning">置顶</span>
+            <span th:if="*{categoryName}" class="label label-success" th:text="*{categoryName}"></span>
+            <span th:text="*{title}"></span>
+          </div>
+          <div class="topic-meta">
+            <span><i class="fa fa-user"></i> <span th:text="*{farmerName}"></span></span>
+            <span style="margin-left: 15px;"><i class="fa fa-clock-o"></i> <span th:text="${#temporals.format(topic.createdAt, 'yyyy-MM-dd HH:mm')}"></span></span>
+            <span style="margin-left: 15px;"><i class="fa fa-eye"></i> 浏览 <span th:text="*{viewCount}"></span></span>
+            <span style="margin-left: 15px;"><i class="fa fa-comment"></i> 回复 <span th:text="*{replyCount}"></span></span>
+          </div>
+        </div>
+        <div class="topic-content" th:utext="*{content}"></div>
+      </div>
+
+      <!-- 评论区域 -->
+      <div class="comment-section">
+        <h4><i class="fa fa-comments"></i> 评论 (<span th:text="${#lists.size(comments)}"></span>)</h4>
+        
+        <div id="commentList">
+          <div th:each="comment : ${comments}" class="comment-item" th:attr="data-comment-id=${comment.id}">
+            <div class="comment-header">
+              <span class="comment-author" th:text="${comment.farmerName}"></span>
+              <span class="comment-time" th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+            </div>
+            <div class="comment-content" th:utext="${comment.content}"></div>
+            <div class="comment-actions">
+              <a th:classappend="${comment.isLiked} ? 'liked'" th:onclick="'toggleLike(' + ${comment.id} + ')'">
+                <i class="fa fa-thumbs-up"></i> 点赞 (<span th:text="${comment.likeCount}"></span>)
+              </a>
+              <a th:onclick="'replyComment(' + ${comment.id} + ')'">
+                <i class="fa fa-reply"></i> 回复
+              </a>
+              <a th:if="${comment.farmerId == user.id}" th:onclick="'deleteComment(' + ${comment.id} + ')'" style="color: #ed5565;">
+                <i class="fa fa-trash"></i> 删除
+              </a>
+            </div>
+          </div>
+          <div th:if="${#lists.isEmpty(comments)}" class="text-center" style="padding: 40px; color: #999;">
+            <i class="fa fa-comment-o" style="font-size: 48px;"></i>
+            <p style="margin-top: 15px;">暂无评论，快来发表第一个评论吧！</p>
+          </div>
+        </div>
+
+        <!-- 发表评论 -->
+        <div class="reply-form">
+          <h5>发表评论</h5>
+          <form id="commentForm">
+            <input type="hidden" name="topicId" th:value="${topic.id}">
+            <div class="form-group">
+              <textarea name="content" class="form-control" rows="5" placeholder="请输入评论内容..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="fa fa-paper-plane"></i> 发表评论
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:include="include :: layout-latest-js" />
+<script>
+$(function() {
+  // 提交评论
+  $('#commentForm').submit(function(e) {
+    e.preventDefault();
+    var formData = $(this).serialize();
+    $.ajax({
+      url: '/farmer/forum/comment/save',
+      type: 'POST',
+      data: formData,
+      success: function(result) {
+        if (result.code == 0) {
+          layer.msg('评论发表成功', {icon: 1}, function() {
+            location.reload();
+          });
+        } else {
+          layer.msg(result.msg || '评论发表失败', {icon: 2});
+        }
+      },
+      error: function() {
+        layer.msg('网络错误', {icon: 2});
+      }
+    });
+  });
+});
+
+function toggleLike(commentId) {
+  $.ajax({
+    url: '/farmer/forum/comment/like',
+    type: 'POST',
+    data: {commentId: commentId},
+    success: function(result) {
+      if (result.code == 0) {
+        location.reload();
+      } else {
+        layer.msg(result.msg || '操作失败', {icon: 2});
+      }
+    },
+    error: function() {
+      layer.msg('网络错误', {icon: 2});
+    }
+  });
+}
+
+function replyComment(commentId) {
+  var content = prompt('请输入回复内容：');
+  if (content && content.trim()) {
+    $.ajax({
+      url: '/farmer/forum/comment/save',
+      type: 'POST',
+      data: {
+        topicId: [[${topic.id}]],
+        content: content,
+        parentCommentId: commentId
+      },
+      success: function(result) {
+        if (result.code == 0) {
+          layer.msg('回复成功', {icon: 1}, function() {
+            location.reload();
+          });
+        } else {
+          layer.msg(result.msg || '回复失败', {icon: 2});
+        }
+      },
+      error: function() {
+        layer.msg('网络错误', {icon: 2});
+      }
+    });
+  }
+}
+
+function deleteComment(commentId) {
+  layer.confirm('确定要删除这条评论吗？', {icon: 3, title: '提示'}, function(index) {
+    $.ajax({
+      url: '/farmer/forum/comment/delete',
+      type: 'POST',
+      data: {id: commentId},
+      success: function(result) {
+        if (result.code == 0) {
+          layer.msg('删除成功', {icon: 1}, function() {
+            location.reload();
+          });
+        } else {
+          layer.msg(result.msg || '删除失败', {icon: 2});
+        }
+      },
+      error: function() {
+        layer.msg('网络错误', {icon: 2});
+      }
+    });
+    layer.close(index);
+  });
+}
+</script>
+</body>
+</html>
+

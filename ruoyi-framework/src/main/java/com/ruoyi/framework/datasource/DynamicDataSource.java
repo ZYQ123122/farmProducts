@@ -12,6 +12,7 @@ import com.ruoyi.common.config.datasource.DynamicDataSourceContextHolder;
  */
 public class DynamicDataSource extends AbstractRoutingDataSource
 {
+    @SuppressWarnings("null")
     public DynamicDataSource(DataSource defaultTargetDataSource, Map<Object, Object> targetDataSources)
     {
         super.setDefaultTargetDataSource(defaultTargetDataSource);

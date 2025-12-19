@@ -10,6 +10,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.lang.NonNull;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,7 +41,8 @@ public class PermitAllUrlProperties implements InitializingBean, ApplicationCont
             Class<?> beanClass;
             if (bean instanceof Advised)
             {
-                beanClass = ((Advised) bean).getTargetSource().getTarget().getClass();
+                Object target = ((Advised) bean).getTargetSource().getTarget();
+                beanClass = target != null ? target.getClass() : bean.getClass();
             }
             else
             {
@@ -134,7 +136,7 @@ public class PermitAllUrlProperties implements InitializingBean, ApplicationCont
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext context) throws BeansException
+    public void setApplicationContext(@NonNull ApplicationContext context) throws BeansException
     {
         this.applicationContext = context;
     }

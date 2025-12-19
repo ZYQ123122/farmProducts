@@ -74,9 +74,12 @@ public class SysDictTypeServiceImpl implements ISysDictTypeService
      * @return 字典数据集合信息
      */
     @Override
+    @SuppressWarnings("unchecked")
     public List<SysDictData> selectDictDataByType(String dictType)
     {
-        List<SysDictData> dictDatas = DictUtils.getDictCache(dictType);
+        List<?> cacheData = DictUtils.getDictCache(dictType);
+        List<SysDictData> dictDatas = cacheData != null && !cacheData.isEmpty() ? 
+            (List<SysDictData>) cacheData : null;
         if (StringUtils.isNotEmpty(dictDatas))
         {
             return dictDatas;

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ForumCommentMapper">
+
+	<resultMap id="ForumCommentResult" type="com.ruoyi.system.domain.ForumComment">
+		<id property="id" column="id" />
+		<result property="topicId" column="topic_id" />
+		<result property="farmerId" column="farmer_id" />
+		<result property="content" column="content" />
+		<result property="parentCommentId" column="parent_comment_id" />
+		<result property="quoteCommentId" column="quote_comment_id" />
+		<result property="likeCount" column="like_count" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+		<result property="farmerName" column="farmer_name" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		c.id, c.topic_id, c.farmer_id, c.content, c.parent_comment_id, 
+		c.quote_comment_id, c.like_count, c.created_at, c.updated_at
+	</sql>
+
+	<select id="selectCommentListByTopicId" resultMap="ForumCommentResult">
+		SELECT 
+			<include refid="Base_Column_List" />,
+			u.name AS farmer_name
+		FROM forum_comments c
+		LEFT JOIN sys_user u ON c.farmer_id = u.id
+		WHERE c.topic_id = #{topicId}
+		ORDER BY c.created_at ASC
+	</select>
+
+	<select id="selectCommentById" resultMap="ForumCommentResult">
+		SELECT 
+			<include refid="Base_Column_List" />,
+			u.name AS farmer_name
+		FROM forum_comments c
+		LEFT JOIN sys_user u ON c.farmer_id = u.id
+		WHERE c.id = #{id}
+	</select>
+
+	<insert id="insertComment" parameterType="com.ruoyi.system.domain.ForumComment" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO forum_comments
+		(topic_id, farmer_id, content, parent_comment_id, quote_comment_id, like_count, created_at, updated_at)
+		VALUES
+		(#{topicId}, #{farmerId}, #{content}, #{parentCommentId}, #{quoteCommentId}, 0, GETDATE(), GETDATE())
+	</insert>
+
+	<update id="updateComment" parameterType="com.ruoyi.system.domain.ForumComment">
+		UPDATE forum_comments
+		<set>
+			<if test="content != null and content != ''">content = #{content},</if>
+			updated_at = GETDATE()
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<delete id="deleteCommentById">
+		DELETE FROM forum_comments WHERE id = #{id}
+	</delete>
+
+</mapper>
+

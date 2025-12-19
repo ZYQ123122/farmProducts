@@ -3,21 +3,137 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>community页面</title>
-  <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
-  <link th:href="@{/css/style.min.css}" rel="stylesheet" />
+  <title>交流社区</title>
+  <th:block th:include="include :: header('交流社区')" />
+  <th:block th:include="include :: layout-latest-css" />
+  <style>
+    .forum-container {
+      padding: 20px;
+    }
+    .forum-header {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .forum-topic-item {
+      background: #fff;
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      padding: 15px 20px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .forum-topic-item:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .forum-topic-item.pinned {
+      border-left: 4px solid #f8ac59;
+    }
+    .topic-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .topic-meta {
+      display: flex;
+      align-items: center;
+      color: #999;
+      font-size: 13px;
+    }
+    .topic-meta span {
+      margin-right: 15px;
+    }
+    .topic-category {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #1ab394;
+      color: #fff;
+      border-radius: 3px;
+      font-size: 12px;
+      margin-right: 10px;
+    }
+    .topic-stats {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .topic-stats span {
+      color: #999;
+      font-size: 13px;
+    }
+    .filter-bar {
+      background: #fff;
+      padding: 15px 20px;
+      border: 1px solid #e7eaec;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .filter-bar select {
+      margin-right: 10px;
+    }
+  </style>
 </head>
 <body class="gray-bg">
 <div class="wrapper wrapper-content animated fadeInRight">
   <div class="ibox">
     <div class="ibox-title">
-      <h5>community</h5>
+      <h5><i class="fa fa-comments-o"></i> 交流社区</h5>
     </div>
-    <div class="ibox-content">
-      <p>community</p>
-      <p class="text-muted">community</p>
+    <div class="ibox-content forum-container">
+      <div class="forum-header">
+        <h3>讨论主题</h3>
+        <button type="button" class="btn btn-primary" onclick="location.href='/farmer/forum/add'">
+          <i class="fa fa-plus"></i> 发布主题
+        </button>
+      </div>
+
+      <div class="filter-bar">
+        <label>分类筛选：</label>
+        <select id="categoryFilter" class="form-control" style="display:inline-block; width:200px;">
+          <option value="">全部</option>
+          <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"></option>
+        </select>
+        <button type="button" class="btn btn-sm btn-default" onclick="filterTopics()">筛选</button>
+      </div>
+
+      <div id="topicList">
+        <div th:each="topic : ${topics}" class="forum-topic-item" th:classappend="${topic.isPinned} ? 'pinned'" th:onclick="'location.href=\'/farmer/forum/detail?id=' + ${topic.id} + '\''">
+          <div class="topic-title">
+            <span th:if="${topic.isPinned}" class="label label-warning">置顶</span>
+            <span th:if="${topic.categoryName}" class="topic-category" th:text="${topic.categoryName}"></span>
+            <span th:text="${topic.title}"></span>
+          </div>
+          <div class="topic-meta">
+            <span><i class="fa fa-user"></i> <span th:text="${topic.farmerName}"></span></span>
+            <span><i class="fa fa-clock-o"></i> <span th:text="${#temporals.format(topic.createdAt, 'yyyy-MM-dd HH:mm')}"></span></span>
+          </div>
+          <div class="topic-stats">
+            <span><i class="fa fa-eye"></i> 浏览 <span th:text="${topic.viewCount}"></span></span>
+            <span><i class="fa fa-comment"></i> 回复 <span th:text="${topic.replyCount}"></span></span>
+          </div>
+        </div>
+        <div th:if="${#lists.isEmpty(topics)}" class="text-center" style="padding: 40px; color: #999;">
+          <i class="fa fa-inbox" style="font-size: 48px;"></i>
+          <p style="margin-top: 15px;">暂无主题，快来发布第一个吧！</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<th:block th:include="include :: layout-latest-js" />
+<script>
+function filterTopics() {
+  var categoryId = document.getElementById('categoryFilter').value;
+  var url = '/farmer/forum/index';
+  if (categoryId) {
+    url += '?categoryId=' + categoryId;
+  }
+  location.href = url;
+}
+</script>
 </body>
 </html>

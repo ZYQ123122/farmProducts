@@ -7,13 +7,14 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 /**
  * 启动程序
  * 
- * @author ruoyi
+ * 若依官方默认启动类，供 Spring Boot 和 IDEA 识别为主程序入口
  */
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
 public class RuoYiApplication
 {
     public static void main(String[] args)
     {
+        // 如需关闭热部署，可取消下一行注释
         // System.setProperty("spring.devtools.restart.enabled", "false");
         SpringApplication.run(RuoYiApplication.class, args);
         System.out.println("(♥◠‿◠)ﾉﾞ  若依启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
@@ -28,3 +29,4 @@ public class RuoYiApplication
                 " ''-'   `'-'    `-..-'              ");
     }
 }
+

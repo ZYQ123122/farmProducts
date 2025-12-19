@@ -1,35 +1,28 @@
 package com.ruoyi.framework.web.service;
 
+import java.util.ArrayList;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.ruoyi.common.core.domain.entity.SysDictData;
-import com.ruoyi.system.service.ISysDictDataService;
-import com.ruoyi.system.service.ISysDictTypeService;
 
 /**
  * RuoYi首创 html调用 thymeleaf 实现字典读取
+ * 简化版本：不再使用字典表
  * 
  * @author ruoyi
  */
 @Service("dict")
 public class DictService
 {
-    @Autowired
-    private ISysDictTypeService dictTypeService;
-
-    @Autowired
-    private ISysDictDataService dictDataService;
-
     /**
      * 根据字典类型查询字典数据信息
      * 
      * @param dictType 字典类型
      * @return 参数键值
      */
-    public List<SysDictData> getType(String dictType)
+    public List<?> getType(String dictType)
     {
-        return dictTypeService.selectDictDataByType(dictType);
+        // 返回空列表，不再使用字典表
+        return new ArrayList<>();
     }
 
     /**
@@ -41,6 +34,7 @@ public class DictService
      */
     public String getLabel(String dictType, String dictValue)
     {
-        return dictDataService.selectDictLabel(dictType, dictValue);
+        // 返回原值，不再使用字典表
+        return dictValue;
     }
 }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ForumLikeMapper">
+
+	<resultMap id="ForumLikeResult" type="com.ruoyi.system.domain.ForumLike">
+		<id property="id" column="id" />
+		<result property="commentId" column="comment_id" />
+		<result property="farmerId" column="farmer_id" />
+		<result property="createdAt" column="created_at" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		id, comment_id, farmer_id, created_at
+	</sql>
+
+	<select id="selectLike" resultMap="ForumLikeResult">
+		SELECT <include refid="Base_Column_List" />
+		FROM forum_likes
+		WHERE comment_id = #{commentId} AND farmer_id = #{farmerId}
+	</select>
+
+	<insert id="insertLike" parameterType="com.ruoyi.system.domain.ForumLike" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO forum_likes
+		(comment_id, farmer_id, created_at)
+		VALUES
+		(#{commentId}, #{farmerId}, GETDATE())
+	</insert>
+
+	<delete id="deleteLike">
+		DELETE FROM forum_likes 
+		WHERE comment_id = #{commentId} AND farmer_id = #{farmerId}
+	</delete>
+
+</mapper>
+

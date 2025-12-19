@@ -35,6 +35,12 @@ public class FarmerProductServiceImpl implements IFarmerProductService
     }
 
     @Override
+    public List<FarmerProduct> selectAvailableProducts()
+    {
+        return farmerProductMapper.selectAvailableProductList();
+    }
+
+    @Override
     public FarmerProduct selectFarmerProductById(Long id, Long farmerId)
     {
         if (id == null)
@@ -77,6 +83,25 @@ public class FarmerProductServiceImpl implements IFarmerProductService
         Assert.notNull(id, "商品ID不能为空");
         validateStatus(status);
         return farmerProductMapper.changeProductStatus(id, farmerId, status);
+    }
+
+
+    @Override
+    public FarmerProduct selectAvailableProductById(Long id)
+    {
+        if (id == null)
+        {
+            return null;
+        }
+        return farmerProductMapper.selectAvailableProductById(id);
+    }
+
+    @Override
+    public boolean decreaseProductStock(Long productId, int quantity)
+    {
+        Assert.notNull(productId, "商品ID不能为空");
+        Assert.isTrue(quantity > 0, "扣减数量必须大于0");
+        return farmerProductMapper.decreaseProductStock(productId, quantity) > 0;
     }
 
     private void validateStatus(String status)

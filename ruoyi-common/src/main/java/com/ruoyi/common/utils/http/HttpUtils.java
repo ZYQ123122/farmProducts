@@ -71,6 +71,7 @@ public class HttpUtils
         {
             String urlNameString = StringUtils.isNotBlank(param) ? url + "?" + param : url;
             log.info("sendGet - {}", urlNameString);
+            @SuppressWarnings("deprecation")
             URL realUrl = new URL(urlNameString);
             URLConnection connection = realUrl.openConnection();
             connection.setRequestProperty("accept", "*/*");
@@ -146,6 +147,7 @@ public class HttpUtils
         try
         {
             log.info("sendPost - {}", url);
+            @SuppressWarnings("deprecation")
             URL realUrl = new URL(url);
             URLConnection conn = realUrl.openConnection();
             conn.setRequestProperty("accept", "*/*");
@@ -217,6 +219,7 @@ public class HttpUtils
             log.info("sendSSLPost - {}", urlNameString);
             SSLContext sc = SSLContext.getInstance("SSL");
             sc.init(null, new TrustManager[] { new TrustAnyTrustManager() }, new java.security.SecureRandom());
+            @SuppressWarnings("deprecation")
             URL console = new URL(urlNameString);
             HttpsURLConnection conn = (HttpsURLConnection) console.openConnection();
             conn.setRequestProperty("accept", "*/*");

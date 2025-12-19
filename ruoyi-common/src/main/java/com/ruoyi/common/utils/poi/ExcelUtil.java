@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -414,7 +415,7 @@ public class ExcelUtil<T>
                     Object val = this.getCellValue(row, entry.getKey());
 
                     // 如果不存在实例则新建.
-                    entity = (entity == null ? clazz.newInstance() : entity);
+                    entity = (entity == null ? clazz.getDeclaredConstructor().newInstance() : entity);
                     // 从map中得到对应列的field.
                     Field field = (Field) entry.getValue()[0];
                     Excel attr = (Excel) entry.getValue()[1];
@@ -1166,7 +1167,9 @@ public class ExcelUtil<T>
                 }
                 else if (value instanceof BigDecimal && -1 != attr.scale())
                 {
-                    cell.setCellValue((((BigDecimal) value).setScale(attr.scale(), attr.roundingMode())).doubleValue());
+                    // 将 int 转换为 RoundingMode 枚举
+                    RoundingMode roundingMode = intToRoundingMode(attr.roundingMode());
+                    cell.setCellValue((((BigDecimal) value).setScale(attr.scale(), roundingMode)).doubleValue());
                 }
                 else if (!attr.handler().equals(ExcelHandlerAdapter.class))
                 {
@@ -1387,7 +1390,7 @@ public class ExcelUtil<T>
     {
         try
         {
-            Object instance = excel.handler().newInstance();
+            Object instance = excel.handler().getDeclaredConstructor().newInstance();
             Method formatMethod = excel.handler().getMethod("format", new Class[] { Object.class, String[].class, Cell.class, Workbook.class });
             value = formatMethod.invoke(instance, value, excel.args(), cell, this.wb);
         }
@@ -1889,5 +1892,27 @@ public class ExcelUtil<T>
             log.error("获取对象异常{}", e.getMessage());
         }
         return method;
+    }
+
+    /**
+     * 将 int 舍入模式值转换为 RoundingMode 枚举
+     * 
+     * @param roundingModeInt int 舍入模式值
+     * @return RoundingMode 枚举
+     */
+    private RoundingMode intToRoundingMode(int roundingModeInt)
+    {
+        switch (roundingModeInt)
+        {
+            case 0: return RoundingMode.UP;
+            case 1: return RoundingMode.DOWN;
+            case 2: return RoundingMode.CEILING;
+            case 3: return RoundingMode.FLOOR;
+            case 4: return RoundingMode.HALF_UP;
+            case 5: return RoundingMode.HALF_DOWN;
+            case 6: return RoundingMode.HALF_EVEN;
+            case 7: return RoundingMode.UNNECESSARY;
+            default: return RoundingMode.HALF_EVEN;
+        }
     }
 }

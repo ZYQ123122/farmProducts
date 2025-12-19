@@ -29,8 +29,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</select>
 
 	<insert id="saveOnline" parameterType="SysUserOnline">
-		replace into sys_user_online(sessionId, login_name, dept_name, ipaddr, login_location, browser, os, status, start_timestamp, last_access_time, expire_time)
-        values (#{sessionId}, #{loginName}, #{deptName}, #{ipaddr}, #{loginLocation}, #{browser}, #{os}, #{status}, #{startTimestamp}, #{lastAccessTime}, #{expireTime})
+		MERGE sys_user_online AS target
+		USING (SELECT #{sessionId} AS sessionId) AS source
+		ON target.sessionId = source.sessionId
+		WHEN MATCHED THEN
+			UPDATE SET login_name = #{loginName}, dept_name = #{deptName}, ipaddr = #{ipaddr}, 
+				login_location = #{loginLocation}, browser = #{browser}, os = #{os}, 
+				status = #{status}, start_timestamp = #{startTimestamp}, 
+				last_access_time = #{lastAccessTime}, expire_time = #{expireTime}
+		WHEN NOT MATCHED THEN
+			INSERT (sessionId, login_name, dept_name, ipaddr, login_location, browser, os, status, start_timestamp, last_access_time, expire_time)
+			VALUES (#{sessionId}, #{loginName}, #{deptName}, #{ipaddr}, #{loginLocation}, #{browser}, #{os}, #{status}, #{startTimestamp}, #{lastAccessTime}, #{expireTime});
 	</insert>
 	
  	<delete id="deleteOnlineById" parameterType="String">
@@ -41,10 +50,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<include refid="selectOnlineVo"/>
 		<where>
 			<if test="ipaddr != null and ipaddr != ''">
-				AND ipaddr like concat('%', #{ipaddr}, '%')
+				AND ipaddr like '%' + #{ipaddr} + '%'
 			</if>
 			<if test="loginName != null and loginName != ''">
-				AND login_name like concat('%', #{loginName}, '%')
+				AND login_name like '%' + #{loginName} + '%'
 			</if>
 		</where>
 	</select>

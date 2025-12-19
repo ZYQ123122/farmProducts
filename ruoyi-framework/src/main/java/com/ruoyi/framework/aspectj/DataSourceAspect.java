@@ -58,6 +58,7 @@ public class DataSourceAspect
     /**
      * 获取需要切换的数据源
      */
+    @SuppressWarnings("null")
     public DataSource getDataSource(ProceedingJoinPoint point)
     {
         MethodSignature signature = (MethodSignature) point.getSignature();

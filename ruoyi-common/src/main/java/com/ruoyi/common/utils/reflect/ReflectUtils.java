@@ -315,6 +315,7 @@ public class ReflectUtils
     /**
      * 改变private/protected的方法为public，尽量不调用实际改动的语句，避免JDK的SecurityManager抱怨。
      */
+    @SuppressWarnings("deprecation")
     public static void makeAccessible(Method method)
     {
         if ((!Modifier.isPublic(method.getModifiers()) || !Modifier.isPublic(method.getDeclaringClass().getModifiers()))
@@ -327,6 +328,7 @@ public class ReflectUtils
     /**
      * 改变private/protected的成员变量为public，尽量不调用实际改动的语句，避免JDK的SecurityManager抱怨。
      */
+    @SuppressWarnings("deprecation")
     public static void makeAccessible(Field field)
     {
         if ((!Modifier.isPublic(field.getModifiers()) || !Modifier.isPublic(field.getDeclaringClass().getModifiers())

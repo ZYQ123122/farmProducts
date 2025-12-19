@@ -28,7 +28,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </sql>
     
 	<select id="selectRoleDeptTree" parameterType="Long" resultType="String">
-		select concat(d.dept_id, d.dept_name) as dept_name
+		select CAST(d.dept_id AS VARCHAR) + d.dept_name as dept_name
 		from sys_dept d
 			left join sys_role_dept rd on d.dept_id = rd.dept_id
 		where d.del_flag = '0' and rd.role_id = #{roleId}
@@ -45,7 +45,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			AND parent_id = #{parentId}
 		</if>
 		<if test="deptName != null and deptName != ''">
-			AND dept_name like concat('%', #{deptName}, '%')
+			AND dept_name like '%' + #{deptName} + '%'
 		</if>
 		<if test="status != null and status != ''">
 			AND status = #{status}
@@ -67,8 +67,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</select>
 	
 	<select id="checkDeptNameUnique" resultMap="SysDeptResult">
-	    <include refid="selectDeptVo"/>
-		where dept_name=#{deptName} and parent_id = #{parentId} and del_flag = '0' limit 1
+	    select top 1 <include refid="selectDeptVo"/>
+		where dept_name=#{deptName} and parent_id = #{parentId} and del_flag = '0'
 	</select>
 
 	<select id="selectDeptById" parameterType="Long" resultMap="SysDeptResult">
@@ -79,11 +79,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</select>
 
 	<select id="selectChildrenDeptById" parameterType="Long" resultMap="SysDeptResult">
-		select * from sys_dept where find_in_set(#{deptId}, ancestors)
+		select * from sys_dept where CHARINDEX(',' + CAST(#{deptId} AS VARCHAR) + ',', ',' + ancestors + ',') > 0
 	</select>
 	
 	<select id="selectNormalChildrenDeptById" parameterType="Long" resultType="int">
-		select count(*) from sys_dept where status = 0 and del_flag = '0' and find_in_set(#{deptId}, ancestors)
+		select count(*) from sys_dept where status = 0 and del_flag = '0' and CHARINDEX(',' + CAST(#{deptId} AS VARCHAR) + ',', ',' + ancestors + ',') > 0
 	</select>
 	
 	<insert id="insertDept" parameterType="SysDept">
@@ -110,7 +110,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			<if test="email != null and email != ''">#{email},</if>
  			<if test="status != null">#{status},</if>
  			<if test="createBy != null and createBy != ''">#{createBy},</if>
- 			sysdate()
+ 			GETDATE()
  		)
 	</insert>
 	

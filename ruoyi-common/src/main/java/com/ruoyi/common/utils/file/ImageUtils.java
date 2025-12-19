@@ -69,6 +69,7 @@ public class ImageUtils
             if (url.startsWith("http"))
             {
                 // 网络地址
+                @SuppressWarnings("deprecation")
                 URL urlObj = new URL(url);
                 URLConnection urlConnection = urlObj.openConnection();
                 urlConnection.setConnectTimeout(30 * 1000);

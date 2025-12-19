@@ -95,7 +95,9 @@ public class GlobalExceptionHandler
         }
         else
         {
-            return new ModelAndView("error/service", "errorMessage", e.getMessage());
+            @SuppressWarnings("null")
+            ModelAndView mav = new ModelAndView("error/service", "errorMessage", e.getMessage());
+            return mav;
         }
     }
 
@@ -124,7 +126,9 @@ public class GlobalExceptionHandler
             value = EscapeUtil.clean(value);
         }
         log.error("请求参数类型不匹配'{}',发生系统异常.", requestURI, e);
-        return AjaxResult.error(String.format("请求参数类型不匹配，参数[%s]要求类型为：'%s'，但输入值为：'%s'", e.getName(), e.getRequiredType().getName(), value));
+        @SuppressWarnings("null")
+        String requiredTypeName = e.getRequiredType() != null ? e.getRequiredType().getName() : "未知类型";
+        return AjaxResult.error(String.format("请求参数类型不匹配，参数[%s]要求类型为：'%s'，但输入值为：'%s'", e.getName(), requiredTypeName, value));
     }
 
     /**

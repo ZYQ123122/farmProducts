@@ -119,6 +119,7 @@ public class FileUploadUtils
      * @throws IOException 比如读写文件出错时
      * @throws InvalidExtensionException 文件校验异常
      */
+    @SuppressWarnings("null")
     public static final String upload(String baseDir, MultipartFile file, String[] allowedExtension, boolean useCustomNaming)
             throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
             InvalidExtensionException
@@ -134,7 +135,8 @@ public class FileUploadUtils
         String fileName = useCustomNaming ? uuidFilename(file) : extractFilename(file);
 
         String absPath = getAbsoluteFile(baseDir, fileName).getAbsolutePath();
-        file.transferTo(Paths.get(absPath));
+        java.nio.file.Path path = Paths.get(absPath);
+        file.transferTo(path);
         return getPathFileName(baseDir, fileName);
     }
 

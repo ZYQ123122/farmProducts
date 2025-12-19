@@ -55,12 +55,22 @@ public class ShiroUtils
 
     public static Long getUserId()
     {
-        return getSysUser().getUserId().longValue();
+        SysUser user = getSysUser();
+        if (user != null && user.getId() != null)
+        {
+            return user.getId();
+        }
+        return null;
     }
 
     public static String getLoginName()
     {
-        return getSysUser().getLoginName();
+        SysUser user = getSysUser();
+        if (user != null)
+        {
+            return user.getUsername();
+        }
+        return null;
     }
 
     public static String getIp()

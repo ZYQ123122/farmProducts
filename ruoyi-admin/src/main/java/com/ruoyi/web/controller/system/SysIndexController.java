@@ -1,7 +1,6 @@
 package com.ruoyi.web.controller.system;
 
-import java.util.Date;
-import java.util.List;
+import java.util.ArrayList;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -16,16 +15,13 @@ import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.constant.ShiroConstants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.core.domain.entity.SysMenu;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.utils.CookieUtils;
-import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.shiro.service.SysPasswordService;
 import com.ruoyi.system.service.ISysConfigService;
-import com.ruoyi.system.service.ISysMenuService;
 
 /**
  * 首页 业务处理
@@ -36,9 +32,6 @@ import com.ruoyi.system.service.ISysMenuService;
 public class SysIndexController extends BaseController
 {
     @Autowired
-    private ISysMenuService menuService;
-
-    @Autowired
     private ISysConfigService configService;
 
     @Autowired
@@ -48,44 +41,117 @@ public class SysIndexController extends BaseController
     @GetMapping("/index")
     public String index(ModelMap mmap, HttpServletRequest request)
     {
-        // 取身份信息
-        SysUser user = getSysUser();
-        // 根据用户id取出菜单
-        List<SysMenu> menus = menuService.selectMenusByUser(user);
-        mmap.put("menus", menus);
-        mmap.put("user", user);
-        mmap.put("sideTheme", configService.selectConfigByKey("sys.index.sideTheme"));
-        mmap.put("skinName", configService.selectConfigByKey("sys.index.skinName"));
-        Boolean footer = Convert.toBool(configService.selectConfigByKey("sys.index.footer"), true);
-        Boolean tagsView = Convert.toBool(configService.selectConfigByKey("sys.index.tagsView"), true);
-        mmap.put("footer", footer);
-        mmap.put("tagsView", tagsView);
-        mmap.put("mainClass", contentMainClass(footer, tagsView));
-        mmap.put("copyrightYear", RuoYiConfig.getCopyrightYear());
-        mmap.put("demoEnabled", RuoYiConfig.isDemoEnabled());
-        mmap.put("isDefaultModifyPwd", initPasswordIsModify(user.getPwdUpdateDate()));
-        mmap.put("isPasswordExpired", passwordIsExpiration(user.getPwdUpdateDate()));
-        mmap.put("isMobile", ServletUtils.checkAgentIsMobile(ServletUtils.getRequest().getHeader("User-Agent")));
-
-        // 菜单导航显示风格
-        String menuStyle = configService.selectConfigByKey("sys.index.menuStyle");
-        // 移动端，默认使左侧导航菜单，否则取默认配置
-        String indexStyle = ServletUtils.checkAgentIsMobile(ServletUtils.getRequest().getHeader("User-Agent")) ? "index" : menuStyle;
-
-        // 优先Cookie配置导航菜单
-        Cookie[] cookies = ServletUtils.getRequest().getCookies();
-        for (Cookie cookie : cookies)
+        try
         {
-            if (StringUtils.isNotEmpty(cookie.getName()) && "nav-style".equalsIgnoreCase(cookie.getName()))
+            // 取身份信息
+            SysUser user = getSysUser();
+            if (user == null)
             {
-                indexStyle = cookie.getValue();
-                break;
+                // 如果用户未登录，重定向到登录页
+                return "redirect:/login";
             }
+            
+            // 根据用户角色重定向到对应的首页
+            String userRole = user.getRole();
+            if (userRole != null)
+            {
+                if ("farmer".equals(userRole))
+                {
+                    return "redirect:/farmer/index";
+                }
+                else if ("buyer".equals(userRole))
+                {
+                    return "redirect:/user/index";
+                }
+                else if ("expert".equals(userRole))
+                {
+                    return "redirect:/manager/index";
+                }
+                else if ("bank".equals(userRole))
+                {
+                    return "redirect:/guest/index";
+                }
+            }
+            
+            // 管理员或默认情况：显示管理员首页
+            // 简化：不再使用菜单系统
+            mmap.put("menus", new ArrayList<>());
+            mmap.put("user", user);
+            
+            // 安全地获取配置，如果失败则使用默认值
+            try
+            {
+                mmap.put("sideTheme", getConfigValue("sys.index.sideTheme", "dark"));
+                mmap.put("skinName", getConfigValue("sys.index.skinName", "blue"));
+                Boolean footer = Convert.toBool(getConfigValue("sys.index.footer", "true"), true);
+                Boolean tagsView = Convert.toBool(getConfigValue("sys.index.tagsView", "true"), true);
+                mmap.put("footer", footer);
+                mmap.put("tagsView", tagsView);
+                mmap.put("mainClass", contentMainClass(footer, tagsView));
+            }
+            catch (Exception e)
+            {
+                // 配置服务失败时使用默认值
+                mmap.put("sideTheme", "dark");
+                mmap.put("skinName", "blue");
+                mmap.put("footer", true);
+                mmap.put("tagsView", true);
+                mmap.put("mainClass", "");
+            }
+            
+            mmap.put("copyrightYear", RuoYiConfig.getCopyrightYear());
+            mmap.put("demoEnabled", RuoYiConfig.isDemoEnabled());
+            // 新表结构：不再有pwdUpdateDate字段
+            mmap.put("isDefaultModifyPwd", false);
+            mmap.put("isPasswordExpired", false);
+            mmap.put("isMobile", ServletUtils.checkAgentIsMobile(ServletUtils.getRequest().getHeader("User-Agent")));
+
+            // 菜单导航显示风格
+            String menuStyle = getConfigValue("sys.index.menuStyle", "index");
+            // 移动端，默认使左侧导航菜单，否则取默认配置
+            String indexStyle = ServletUtils.checkAgentIsMobile(ServletUtils.getRequest().getHeader("User-Agent")) ? "index" : (menuStyle != null ? menuStyle : "index");
+
+            // 优先Cookie配置导航菜单
+            Cookie[] cookies = ServletUtils.getRequest().getCookies();
+            if (cookies != null)
+            {
+                for (Cookie cookie : cookies)
+                {
+                    if (StringUtils.isNotEmpty(cookie.getName()) && "nav-style".equalsIgnoreCase(cookie.getName()))
+                    {
+                        indexStyle = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+            String webIndex = "topnav".equalsIgnoreCase(indexStyle) ? "index-topnav" : "index";
+            // CSRF Token
+            request.getSession().setAttribute(ShiroConstants.CSRF_TOKEN, ServletUtils.generateToken());
+            return webIndex;
         }
-        String webIndex = "topnav".equalsIgnoreCase(indexStyle) ? "index-topnav" : "index";
-        // CSRF Token
-        request.getSession().setAttribute(ShiroConstants.CSRF_TOKEN, ServletUtils.generateToken());
-        return webIndex;
+        catch (Exception e)
+        {
+            // 记录异常并重定向到登录页
+            logger.error("访问首页时发生异常", e);
+            return "redirect:/login";
+        }
+    }
+    
+    /**
+     * 安全地获取配置值，如果失败则返回默认值
+     */
+    private String getConfigValue(String key, String defaultValue)
+    {
+        try
+        {
+            String value = configService.selectConfigByKey(key);
+            return StringUtils.isNotEmpty(value) ? value : defaultValue;
+        }
+        catch (Exception e)
+        {
+            logger.warn("获取配置 {} 失败，使用默认值: {}", key, defaultValue, e);
+            return defaultValue;
+        }
     }
 
     // 锁定屏幕
@@ -155,27 +221,4 @@ public class SysIndexController extends BaseController
         return StringUtils.EMPTY;
     }
 
-    // 检查初始密码是否提醒修改
-    public boolean initPasswordIsModify(Date pwdUpdateDate)
-    {
-        Integer initPasswordModify = Convert.toInt(configService.selectConfigByKey("sys.account.initPasswordModify"));
-        return initPasswordModify != null && initPasswordModify == 1 && pwdUpdateDate == null;
-    }
-
-    // 检查密码是否过期
-    public boolean passwordIsExpiration(Date pwdUpdateDate)
-    {
-        Integer passwordValidateDays = Convert.toInt(configService.selectConfigByKey("sys.account.passwordValidateDays"));
-        if (passwordValidateDays != null && passwordValidateDays > 0)
-        {
-            if (StringUtils.isNull(pwdUpdateDate))
-            {
-                // 如果从未修改过初始密码，直接提醒过期
-                return true;
-            }
-            Date nowDate = DateUtils.getNowDate();
-            return DateUtils.differentDaysByMillisecond(nowDate, pwdUpdateDate) > passwordValidateDays;
-        }
-        return false;
-    }
 }

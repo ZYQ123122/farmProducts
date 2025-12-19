@@ -7,6 +7,7 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.utils.StringUtils;
 
@@ -24,13 +25,13 @@ public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationC
     private static ApplicationContext applicationContext;
 
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException
+    public void postProcessBeanFactory(@NonNull ConfigurableListableBeanFactory beanFactory) throws BeansException
     {
         SpringUtils.beanFactory = beanFactory;
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException
     {
         SpringUtils.applicationContext = applicationContext;
     }
@@ -43,7 +44,7 @@ public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationC
      * @throws org.springframework.beans.BeansException
      *
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "null"})
     public static <T> T getBean(String name) throws BeansException
     {
         return (T) beanFactory.getBean(name);
@@ -57,6 +58,7 @@ public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationC
      * @throws org.springframework.beans.BeansException
      *
      */
+    @SuppressWarnings("null")
     public static <T> T getBean(Class<T> clz) throws BeansException
     {
         T result = (T) beanFactory.getBean(clz);
@@ -69,6 +71,7 @@ public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationC
      * @param name
      * @return boolean
      */
+    @SuppressWarnings("null")
     public static boolean containsBean(String name)
     {
         return beanFactory.containsBean(name);
@@ -82,6 +85,7 @@ public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationC
      * @throws org.springframework.beans.factory.NoSuchBeanDefinitionException
      *
      */
+    @SuppressWarnings("null")
     public static boolean isSingleton(String name) throws NoSuchBeanDefinitionException
     {
         return beanFactory.isSingleton(name);
@@ -93,6 +97,7 @@ public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationC
      * @throws org.springframework.beans.factory.NoSuchBeanDefinitionException
      *
      */
+    @SuppressWarnings("null")
     public static Class<?> getType(String name) throws NoSuchBeanDefinitionException
     {
         return beanFactory.getType(name);
@@ -106,6 +111,7 @@ public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationC
      * @throws org.springframework.beans.factory.NoSuchBeanDefinitionException
      *
      */
+    @SuppressWarnings("null")
     public static String[] getAliases(String name) throws NoSuchBeanDefinitionException
     {
         return beanFactory.getAliases(name);
@@ -151,6 +157,7 @@ public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationC
      * @return 当前的配置文件的值
      *
      */
+    @SuppressWarnings("null")
     public static String getRequiredProperty(String key)
     {
         return applicationContext.getEnvironment().getRequiredProperty(key);

@@ -14,6 +14,13 @@
     <link th:href="@{/css/style.min.css}" rel="stylesheet" />
     <link th:href="@{/css/skins.css}" rel="stylesheet" />
     <link th:href="@{/ruoyi/css/ry-ui.css?v=4.8.1}" rel="stylesheet" />
+    <!-- 修复 text-size-adjust 兼容性问题 -->
+    <style>
+      html {
+        -ms-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
+    </style>
 </head>
 <body class="fixed-sidebar full-height-layout gray-bg" th:classappend="${isMobile} ? 'canvas-menu'" style="overflow: hidden">
 <div id="wrapper">
@@ -41,9 +48,12 @@
                         <div class="pull-left info">
                             <p>[[${user.loginName}]]</p>
                             <a href="javascript:;"><i class="fa fa-circle text-success"></i> 在线</a>
-                            <a th:href="@{logout}" style="padding-left:5px;"><i class="fa fa-sign-out text-danger"></i> 注销</a>
+                            <a href="javascript:void(0);" onclick="logout()" style="padding-left:5px;"><i class="fa fa-sign-out text-danger"></i> 注销</a>
                         </div>
                     </div>
+                </li>
+                <li>
+                    <a class="menuItem" th:href="@{/user/home}" th:data-refresh="true"><i class="fa fa-home"></i> <span class="nav-label">商品首页</span></a>
                 </li>
                 <li>
                     <a href="javascript:;"><i class="fa fa-list"></i> <span class="nav-label">需求管理</span><span class="fa arrow"></span></a>
@@ -107,7 +117,7 @@
                             </li>
                             <li class="divider"></li>
                             <li>
-                                <a th:href="@{logout}">
+                                <a href="javascript:void(0);" onclick="logout()">
                                     <i class="fa fa-sign-out"></i> 退出登录</a>
                             </li>
                         </ul>
@@ -121,7 +131,7 @@
             </button>
             <nav class="page-tabs menuTabs">
                 <div class="page-tabs-content">
-                    <a href="javascript:;" class="menuTab" th:data-id="@{/user/requirements}">需求列表</a>
+                    <a href="javascript:;" class="menuTab active" th:data-id="@{/user/home}">商品首页</a>
                 </div>
             </nav>
             <button class="roll-nav roll-right tabRight">
@@ -133,8 +143,8 @@
         <a id="ax_close_max" class="ax_close_max" href="javascript:;" title="关闭全屏"> <i class="fa fa-times-circle-o"></i> </a>
 
         <div class="row mainContent" id="content-main" th:classappend="${mainClass}">
-            <iframe class="RuoYi_iframe" name="iframe0" width="100%" height="100%" th:data-id="@{/user/requirements}"
-                    th:src="@{/user/requirements}" frameborder="0" seamless></iframe>
+            <iframe class="RuoYi_iframe" name="iframe0" width="100%" height="100%" th:data-id="@{/user/home}"
+                    th:src="@{/user/home}" frameborder="0" seamless></iframe>
         </div>
 
         <div th:if="${footer}" class="footer">
@@ -205,7 +215,7 @@
     }
 
     function tabActive() {
-        $('.menuTab[data-id="' + ctx + 'user/requirements"]').addClass('active');
+        $('.menuTab[data-id="' + ctx + 'user/home"]').addClass('active');
     }
 
     $(function() {
@@ -258,6 +268,15 @@
         }
         $("[data-toggle='tooltip']").tooltip();
     });
+
+    function logout() {
+        // 在父窗口跳转到登录页面
+        if (window.top != window.self) {
+            window.top.location.href = ctx + 'logout';
+        } else {
+            window.location.href = ctx + 'logout';
+        }
+    }
 </script>
 </body>
 </html>

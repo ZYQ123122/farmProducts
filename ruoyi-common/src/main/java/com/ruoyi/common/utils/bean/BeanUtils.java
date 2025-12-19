@@ -28,6 +28,7 @@ public class BeanUtils extends org.springframework.beans.BeanUtils
      * @param dest 目标对象
      * @param src 源对象
      */
+    @SuppressWarnings("null")
     public static void copyBeanProp(Object dest, Object src)
     {
         try

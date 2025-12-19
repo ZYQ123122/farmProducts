@@ -26,13 +26,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    <include refid="selectPostVo"/>
 		<where>
 			<if test="postCode != null and postCode != ''">
-				AND post_code like concat('%', #{postCode}, '%')
+				AND post_code like '%' + #{postCode} + '%'
 			</if>
 			<if test="status != null and status != ''">
 				AND status = #{status}
 			</if>
 			<if test="postName != null and postName != ''">
-				AND post_name like concat('%', #{postName}, '%')
+				AND post_name like '%' + #{postName} + '%'
 			</if>
 		</where>
 	</select>
@@ -55,13 +55,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</select>
 	
 	<select id="checkPostNameUnique" parameterType="String" resultMap="SysPostResult">
-		<include refid="selectPostVo"/>
-		 where post_name=#{postName} limit 1
+		select top 1 <include refid="selectPostVo"/>
+		 where post_name=#{postName}
 	</select>
 	
 	<select id="checkPostCodeUnique" parameterType="String" resultMap="SysPostResult">
-		<include refid="selectPostVo"/>
-		 where post_code=#{postCode} limit 1
+		select top 1 <include refid="selectPostVo"/>
+		 where post_code=#{postCode}
 	</select>
 	
  	<delete id="deletePostByIds" parameterType="Long">
@@ -103,7 +103,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			<if test="status != null and status != ''">#{status},</if>
  			<if test="remark != null and remark != ''">#{remark},</if>
  			<if test="createBy != null and createBy != ''">#{createBy},</if>
- 			sysdate()
+ 			GETDATE()
  		)
 	</insert>
 

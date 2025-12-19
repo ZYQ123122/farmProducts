@@ -15,6 +15,13 @@
     <link th:href="@{/css/style.min.css}" rel="stylesheet"/>
     <link th:href="@{/css/skins.css}" rel="stylesheet"/>
     <link th:href="@{/ruoyi/css/ry-ui.css?v=4.8.1}" rel="stylesheet"/>
+    <!-- 修复 text-size-adjust 兼容性问题 -->
+    <style>
+        html {
+            -ms-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+    </style>
 </head>
 <body class="fixed-sidebar full-height-layout gray-bg" th:classappend="${isMobile} ? 'canvas-menu'" style="overflow: hidden">
 <div id="wrapper">

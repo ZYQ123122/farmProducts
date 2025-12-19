@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ForumTopicMapper">
+
+	<resultMap id="ForumTopicResult" type="com.ruoyi.system.domain.ForumTopic">
+		<id property="id" column="id" />
+		<result property="farmerId" column="farmer_id" />
+		<result property="title" column="title" />
+		<result property="content" column="content" />
+		<result property="categoryId" column="category_id" />
+		<result property="isPinned" column="is_pinned" />
+		<result property="viewCount" column="view_count" />
+		<result property="replyCount" column="reply_count" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+		<result property="farmerName" column="farmer_name" />
+		<result property="categoryName" column="category_name" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		t.id, t.farmer_id, t.title, t.content, t.category_id, t.is_pinned, 
+		t.view_count, t.reply_count, t.created_at, t.updated_at
+	</sql>
+
+	<select id="selectTopicList" parameterType="com.ruoyi.system.domain.ForumTopic" resultMap="ForumTopicResult">
+		SELECT 
+			<include refid="Base_Column_List" />,
+			u.name AS farmer_name,
+			c.name AS category_name
+		FROM forum_topics t
+		LEFT JOIN sys_user u ON t.farmer_id = u.id
+		LEFT JOIN forum_categories c ON t.category_id = c.id
+		<where>
+			<if test="title != null and title != ''">
+				AND t.title LIKE '%' + #{title} + '%'
+			</if>
+			<if test="categoryId != null">
+				AND t.category_id = #{categoryId}
+			</if>
+			<if test="farmerId != null">
+				AND t.farmer_id = #{farmerId}
+			</if>
+		</where>
+		ORDER BY t.is_pinned DESC, t.created_at DESC
+	</select>
+
+	<select id="selectTopicById" resultMap="ForumTopicResult">
+		SELECT 
+			<include refid="Base_Column_List" />,
+			u.name AS farmer_name,
+			c.name AS category_name
+		FROM forum_topics t
+		LEFT JOIN sys_user u ON t.farmer_id = u.id
+		LEFT JOIN forum_categories c ON t.category_id = c.id
+		WHERE t.id = #{id}
+	</select>
+
+	<insert id="insertTopic" parameterType="com.ruoyi.system.domain.ForumTopic" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO forum_topics
+		(farmer_id, title, content, category_id, is_pinned, view_count, reply_count, created_at, updated_at)
+		VALUES
+		(#{farmerId}, #{title}, #{content}, #{categoryId}, #{isPinned}, 0, 0, GETDATE(), GETDATE())
+	</insert>
+
+	<update id="updateTopic" parameterType="com.ruoyi.system.domain.ForumTopic">
+		UPDATE forum_topics
+		<set>
+			<if test="title != null and title != ''">title = #{title},</if>
+			<if test="content != null">content = #{content},</if>
+			<if test="categoryId != null">category_id = #{categoryId},</if>
+			<if test="isPinned != null">is_pinned = #{isPinned},</if>
+			updated_at = GETDATE()
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<delete id="deleteTopicById">
+		DELETE FROM forum_topics WHERE id = #{id}
+	</delete>
+
+	<update id="incrementViewCount">
+		UPDATE forum_topics
+		SET view_count = view_count + 1
+		WHERE id = #{id}
+	</update>
+
+	<update id="updatePinnedStatus">
+		UPDATE forum_topics
+		SET is_pinned = #{isPinned}, updated_at = GETDATE()
+		WHERE id = #{id}
+	</update>
+
+</mapper>
+

@@ -10,15 +10,18 @@ function register() {
     var username = $.common.trim($("input[name='username']").val());
     var password = $.common.trim($("input[name='password']").val());
     var validateCode = $("input[name='validateCode']").val();
-    // 新增：获取选择的身份
-    var userType = $("select[name='userType']").val();
+    // 新表结构：获取选择的角色
+    var role = $("select[name='role']").val();
+    if (role == null || role == "") {
+        role = $("select[name='userType']").val(); // 兼容旧字段名
+    }
 
     if($.common.isEmpty(validateCode) && captchaEnabled) {
         $.modal.msg("请输入验证码");
         return false;
     }
-    // 新增：校验身份选择
-    if($.common.isEmpty(userType)) {
+    // 新表结构：校验角色选择
+    if($.common.isEmpty(role)) {
         $.modal.msg("请选择用户身份");
         return false;
     }
@@ -27,10 +30,11 @@ function register() {
         type: "post",
         url: ctx + "register",
         data: {
-            "loginName": username,
+            "username": username,
+            "loginName": username,  // 兼容旧字段
             "password": password,
             "validateCode": validateCode,
-            "userType": userType  // 新增：传递身份参数到后端
+            "role": role  // 新表结构：使用role字段
         },
         beforeSend: function () {
             $.modal.loading($("#btnSubmit").data("loading"));

@@ -13,6 +13,7 @@ public class PermissionContextHolder
 {
     private static final String PERMISSION_CONTEXT_ATTRIBUTES = "PERMISSION_CONTEXT";
 
+    @SuppressWarnings("null")
     public static void setContext(String permission)
     {
         RequestContextHolder.currentRequestAttributes().setAttribute(PERMISSION_CONTEXT_ATTRIBUTES, permission,
