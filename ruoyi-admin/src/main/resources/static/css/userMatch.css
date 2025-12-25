@@ -1,0 +1,14 @@
+/* 匹配页面自定义样式 */
+#matchForm .form-group {
+    margin-bottom: 15px;
+}
+#resultBox {
+    margin-top: 20px;
+}
+#matchResultTable th, #matchResultTable td {
+    vertical-align: middle;
+}
+#emptyResult {
+    color: #999;
+    font-size: 14px;
+}
